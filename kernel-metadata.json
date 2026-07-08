@@ -6,8 +6,8 @@
   "kernel_type": "notebook",
   "is_private": true,
   "enable_gpu": true,
-  "enable_internet": true,
-  "dataset_sources": [],
+  "enable_internet": false,
+  "dataset_sources": ["jackiemartindale/histopath-baseline-code"],
   "competition_sources": ["histopathologic-cancer-detection"],
   "kernel_sources": []
 }
