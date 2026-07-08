@@ -53,7 +53,12 @@ def build_model(cfg: dict) -> tf.keras.Model:
     backbone.trainable = False  # phase 1
 
     inputs = tf.keras.Input((size, size, 3), dtype="uint8", name="image")
-    x = tf.cast(inputs, tf.float32)
+    # Cast uint8 -> float32 with an identity Rescaling(scale=1.0). Keras 3 forbids
+    # a raw tf.cast on a symbolic KerasTensor, and Rescaling is a proper layer that
+    # round-trips through model.save/load. scale=1.0, offset=0 changes NO pixel
+    # values — this is NOT a normalization (the backbone's include_preprocessing
+    # still does the one-and-only [0,255] normalization; no double-normalize).
+    x = layers.Rescaling(1.0, name="to_float")(inputs)
     x = _augmenter(cfg)(x)
     x = backbone(x, training=False)
     x = layers.GlobalAveragePooling2D(name="gap")(x)
