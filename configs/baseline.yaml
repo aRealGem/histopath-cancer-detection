@@ -1,0 +1,54 @@
+# Baseline config — MobileNetV3 transfer for Histopathologic Cancer Detection (PCam)
+# Every knob the pipeline reads lives here. Override via `--config` or env for sweeps.
+
+seed: 1337
+
+data:
+  # Root that CONTAINS train/, test/, train_labels.csv.
+  # Kaggle notebook:  /kaggle/input/histopathologic-cancer-detection
+  # Colab (after download_data.sh): ./data
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96          # native PCam patch size; no resize needed for MobileNetV3
+  val_fraction: 0.10
+  # WSI-grouped split prevents patches from one slide leaking across train/val.
+  # The full patch_id->wsi map (220,025 patches / 216 Camelyon16 slides) ships with
+  # the repo gzipped, so leak-free grouping is ON by default. On Kaggle, either
+  # `git clone` this repo (map comes with it) or attach it as a dataset and point
+  # here. If the file is absent the pipeline WARNS and falls back to stratified
+  # random (val AUROC may be optimistic). See README "Leakage" note.
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz   # id,wsi; .csv or .csv.gz
+  sample_n: null          # int => reproducible stratified subsample (smoke tests)
+  cache: false            # true => cache decoded images (needs ~6GB RAM or fast SSD)
+
+train:
+  batch_size: 256
+  epochs_head: 6          # phase 1: frozen backbone, train head only
+  epochs_finetune: 6      # phase 2: unfreeze top blocks, low LR. 0 disables.
+  lr_head: 1.0e-3
+  lr_finetune: 1.0e-5
+  finetune_unfreeze_layers: 40   # last N backbone layers to unfreeze in phase 2
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: true   # set false on CPU-only or if you hit NaNs
+
+model:
+  backbone: MobileNetV3Small   # or MobileNetV3Large
+  weights: imagenet
+
+augment:
+  horizontal_flip: true
+  vertical_flip: true          # H&E patches are orientation-invariant
+  rotation_factor: 0.5         # +/- (0.5 * 2pi) i.e. full rotation
+  contrast_factor: 0.1
+
+paths:
+  out_dir: ./artifacts         # checkpoints, logs, submission land here
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv

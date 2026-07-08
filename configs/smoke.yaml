@@ -1,0 +1,52 @@
+# Smoke config — end-to-end sanity run on ~2k sampled patches.
+# Purpose: prove the whole pipeline (cv2 decode -> grouped split -> 2-phase train
+# -> checkpoint on val AUROC -> evaluate -> submission.csv) runs, NOT to score well.
+# Fast enough for a CPU/Colab/Kaggle smoke test in a few minutes.
+#
+# Usage (on Kaggle GPU or Colab — SandboxPi never trains):
+#   python -m src.train    --config configs/smoke.yaml
+#   python -m src.evaluate --config configs/smoke.yaml
+#   python -m src.predict  --config configs/smoke.yaml
+
+seed: 1337
+
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.10
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz   # grouped split still exercised
+  sample_n: 2000          # reproducible stratified subsample for the smoke run
+  cache: false
+
+train:
+  batch_size: 64          # small so it runs on CPU too
+  epochs_head: 1          # one head epoch...
+  epochs_finetune: 1      # ...then one fine-tune epoch: exercises both phases
+  lr_head: 1.0e-3
+  lr_finetune: 1.0e-5
+  finetune_unfreeze_layers: 20
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: false  # off: CPU-safe and avoids NaNs on tiny runs
+
+model:
+  backbone: MobileNetV3Small
+  weights: imagenet
+
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv

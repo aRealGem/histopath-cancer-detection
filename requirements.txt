@@ -1,0 +1,13 @@
+# Colab & Kaggle GPU images already ship a compatible TensorFlow (2.15–2.18) and
+# CUDA stack — do NOT pip-install tensorflow there or you risk breaking CUDA.
+# Pin TF only for a local/from-scratch venv. Everything below is safe to install
+# in any of the three environments.
+#
+# tensorflow>=2.15,<2.19          # uncomment ONLY for a local venv
+opencv-python-headless==4.11.0.86  # TIFF decode; headless = no GUI libs, smaller/safer
+numpy>=1.26,<2.2
+pandas>=2.1,<2.3
+scikit-learn>=1.4,<1.6
+pyyaml>=6.0,<7
+matplotlib>=3.8,<3.10             # ROC plot only
+kaggle>=1.6,<2                    # data download + submission CLI

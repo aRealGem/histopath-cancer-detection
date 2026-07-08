@@ -1,0 +1,15 @@
+# Sweep grid — consumed by scripts/sweep.py.
+# `base` names the config every run starts from; `grid` maps dotted config keys to
+# the list of values to try. sweep.py runs the full Cartesian product, trains +
+# evaluates each, and appends val AUROC to artifacts/sweep_results.csv.
+#
+# Keep grids small — each cell is a full train run on GPU. Start with a smoke grid,
+# then widen on Kaggle. Any key in baseline.yaml is sweepable (rule 1: config-driven).
+
+base: configs/baseline.yaml
+
+grid:
+  train.lr_finetune: [1.0e-5, 3.0e-5]
+  train.finetune_unfreeze_layers: [20, 40]
+  train.dropout: [0.3, 0.5]
+  # model.backbone: [MobileNetV3Small, MobileNetV3Large]   # uncomment to sweep size

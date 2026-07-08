@@ -1,0 +1,28 @@
+# Secrets — never commit
+kaggle.json
+.env
+*.pem
+*.key
+
+# Data & model artifacts (large / regenerable)
+data/*
+# ...but DO commit the bundled WSI map — it's the #1 correctness input (leak-free
+# grouped split) and small when gzipped; a forum download link can rot. Ignore the
+# dir contents, then re-include just the map (parents must be un-ignored first).
+!data/wsi/
+data/wsi/*
+!data/wsi/patch_id_wsi_full.csv.gz
+artifacts/
+*.keras
+*.h5
+submission.csv
+history.csv
+*.png
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv*/
+.ipynb_checkpoints/
+.DS_Store

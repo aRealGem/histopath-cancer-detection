@@ -1,0 +1,13 @@
+{
+  "id": "YOUR_KAGGLE_USERNAME/histopath-mobilenetv3-baseline",
+  "title": "histopath-mobilenetv3-baseline",
+  "code_file": "notebooks/colab_kaggle_runner.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": ["histopathologic-cancer-detection"],
+  "kernel_sources": []
+}

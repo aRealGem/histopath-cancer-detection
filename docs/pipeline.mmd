@@ -1,0 +1,15 @@
+flowchart LR
+    A["train_labels.csv<br/>~220k ids"] --> B{"split_train_val<br/>WSI-grouped or<br/>stratified"}
+    B -->|90%| C["train tf.data"]
+    B -->|10%| D["val tf.data"]
+    subgraph decode["per-image (cv2 py_function)"]
+      E[".tif -> RGB uint8 96x96"]
+    end
+    C --> E
+    D --> E
+    E --> F["MobileNetV3<br/>(augment + backbone + head)"]
+    F --> G["Phase 1: frozen head<br/>Phase 2: fine-tune top N"]
+    G --> H["best.keras<br/>(max val AUROC)"]
+    H --> I["evaluate.py<br/>AUROC + ROC png"]
+    H --> J["predict.py<br/>test/ -> submission.csv"]
+    J --> K["Kaggle late submission<br/>leaderboard AUROC"]
