@@ -1,5 +1,5 @@
 {
-  "id": "YOUR_KAGGLE_USERNAME/histopath-mobilenetv3-baseline",
+  "id": "jackiemartindale/histopath-mobilenetv3-baseline",
   "title": "histopath-mobilenetv3-baseline",
   "code_file": "notebooks/colab_kaggle_runner.ipynb",
   "language": "python",
