@@ -27,7 +27,10 @@ data/wsi/patch_id_wsi_full.csv.gz  bundled WSI map (leak-free grouped split)
 notebooks/eda.ipynb     class balance, WSI/leakage, tiles, dtype + cv2-decode checks
 notebooks/colab_kaggle_runner.ipynb  thin orchestration cell
 docs/pipeline.mmd       mermaid dataflow diagram
+docs/architecture.png   rendered architecture (pipeline · model graph · orchestration)
 ```
+
+![architecture](docs/architecture.png)
 
 ## Quick paths
 - **EDA first:** open `notebooks/eda.ipynb` (class balance, slide/leakage stats, sample

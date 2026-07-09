@@ -18,6 +18,7 @@ artifacts/
 submission.csv
 history.csv
 *.png
+!docs/*.png          # keep committed diagrams (architecture, etc.)
 
 # Python
 __pycache__/
