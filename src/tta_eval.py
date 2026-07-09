@@ -24,6 +24,7 @@ import tensorflow as tf
 from sklearn.metrics import roc_auc_score
 
 from src import data
+from src import model as _model  # noqa: F401  (registers custom layers for load_model)
 from src.utils import get_logger, load_config, set_seed
 
 log = get_logger()

@@ -21,9 +21,63 @@ _BACKBONES = {
 }
 
 
+@tf.keras.utils.register_keras_serializable(package="histopath")
+class RandomHEDJitter(layers.Layer):
+    """H&E stain-color augmentation via HED color deconvolution (Tellez et al. 2019).
+
+    Decomposes each patch into Hematoxylin/Eosin/residual stain concentrations
+    (Ruifrok–Johnston OD basis), perturbs them per-image (c -> c*alpha + beta,
+    alpha~U(1-s,1+s), beta~U(-s,s)), and recomposes. Teaches invariance to the
+    staining/scanner color variation that drives the train->private-test gap.
+
+    Operates on float32 patches in [0,255] and returns the same range (so the
+    backbone's include_preprocessing still does the one-and-only normalization).
+    Identity at inference (training=False), like the other augmentation layers.
+    Registered as a serializable layer so evaluate.py/predict.py can load_model.
+    """
+
+    # Rows = OD-RGB vectors of [Hematoxylin, Eosin, residual].
+    _STAIN = [[0.65, 0.70, 0.29],
+              [0.07, 0.99, 0.11],
+              [0.27, 0.57, 0.78]]
+
+    def __init__(self, sigma: float = 0.05, **kwargs):
+        super().__init__(**kwargs)
+        self.sigma = float(sigma)
+
+    def build(self, input_shape):
+        S = tf.constant(self._STAIN, dtype=tf.float32)   # [stain, rgb]
+        self._S = S
+        self._D = tf.linalg.inv(S)                        # deconvolution [rgb, stain]
+        super().build(input_shape)
+
+    def call(self, inputs, training=None):
+        if not training or self.sigma <= 0.0:
+            return inputs
+        x = tf.cast(inputs, tf.float32)
+        I0 = 256.0
+        od = -tf.math.log((x + 1.0) / I0)                          # optical density
+        conc = tf.einsum("bhwk,ki->bhwi", od, self._D)             # stain concentrations
+        b = tf.shape(x)[0]
+        alpha = tf.random.uniform((b, 1, 1, 3), 1.0 - self.sigma, 1.0 + self.sigma)
+        beta = tf.random.uniform((b, 1, 1, 3), -self.sigma, self.sigma)
+        conc = conc * alpha + beta
+        od2 = tf.einsum("bhwi,ik->bhwk", conc, self._S)
+        x2 = tf.exp(-od2) * I0 - 1.0
+        return tf.clip_by_value(x2, 0.0, 255.0)
+
+    def get_config(self):
+        cfg = super().get_config()
+        cfg.update(sigma=self.sigma)
+        return cfg
+
+
 def _augmenter(cfg: dict) -> tf.keras.Sequential:
     a = cfg["augment"]
     steps: list[layers.Layer] = []
+    if a.get("stain_jitter"):
+        # Color augmentation first, on the raw [0,255] float image.
+        steps.append(RandomHEDJitter(a["stain_jitter"]))
     flips = []
     if a.get("horizontal_flip"):
         flips.append("horizontal")
