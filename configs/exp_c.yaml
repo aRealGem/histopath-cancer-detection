@@ -1,0 +1,40 @@
+# Experiment C — fine-tune at 10x LR (1e-4) with more unfrozen layers (top-80).
+# Baseline fine-tune (1e-5 / top-40) did not improve on head-only 0.906; this
+# tests whether more layers at a higher LR unlocks phase-2 gains.
+seed: 1337
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.1
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz
+  sample_n: null
+  cache: false
+train:
+  batch_size: 256
+  epochs_head: 6
+  epochs_finetune: 6
+  lr_head: 0.001
+  lr_finetune: 0.0001
+  finetune_unfreeze_layers: 80
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: true
+model:
+  backbone: MobileNetV3Small
+  weights: imagenet
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv
