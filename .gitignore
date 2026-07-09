@@ -18,7 +18,8 @@ artifacts/
 submission.csv
 history.csv
 *.png
-!docs/*.png          # keep committed diagrams (architecture, etc.)
+# keep committed diagrams (architecture, etc.) — inline comments aren't allowed here
+!docs/*.png
 
 # Python
 __pycache__/
