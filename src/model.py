@@ -15,9 +15,15 @@ from __future__ import annotations
 import tensorflow as tf
 from tensorflow.keras import layers
 
+# All of these take include_preprocessing=True and the SAME raw-[0,255] input
+# contract (they normalize once, internally). That uniform contract is what lets
+# build_model stay backbone-agnostic and is asserted by tests/test_model.py so a
+# new backbone can't silently break the no-double-normalize rule.
 _BACKBONES = {
     "MobileNetV3Small": tf.keras.applications.MobileNetV3Small,
     "MobileNetV3Large": tf.keras.applications.MobileNetV3Large,
+    "EfficientNetV2B0": tf.keras.applications.EfficientNetV2B0,
+    "EfficientNetV2B1": tf.keras.applications.EfficientNetV2B1,
 }
 
 
