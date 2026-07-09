@@ -86,8 +86,9 @@ def main(config_path: str, model_path: str, do_test: bool) -> None:
 
     # --- Optional: TTA submission over the full test set ---
     if do_test:
-        test_ds, ids = data.make_test_dataset(cfg)
-        Xt, _ = _collect(test_ds.map(lambda img, _id: (img, 0)))
+        test_ds, ids = data.make_test_dataset(cfg)  # yields (image, id_string)
+        xs = [xb.numpy() for xb, _id in test_ds]
+        Xt = np.concatenate(xs)
         log.info("Test decoded once into RAM: X=%s (%.0f MB)", Xt.shape, Xt.nbytes / 1e6)
         probs = _tta_probs(net, Xt)
         import pandas as pd
