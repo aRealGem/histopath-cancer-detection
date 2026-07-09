@@ -97,11 +97,27 @@ pip install -r requirements.txt
    `uint8`; no manual rescaling anywhere. Adding a `Rescaling(1/255)` would silently
    halve your score.
 
-## Method-note template (fill after first run)
-> MobileNetV3-Small (ImageNet), 96×96 H&E patches, in-model flip/rotate/contrast
-> augmentation. Two-phase: head-only (lr 1e-3, N ep) then top-40-layer fine-tune
-> (lr 1e-5, BN frozen). Stratified/WSI-grouped 90/10 split. Best checkpoint by
-> val AUROC. **Val AUROC = ___ ; Kaggle late-submission LB = ___ (rank ___/___).**
+## Method note
+
+> **MobileNetV3-Small (ImageNet) transfer baseline for PatchCamelyon.** 96×96 H&E
+> patches are decoded with OpenCV (BGR→RGB, uint8) inside a `tf.py_function` and fed
+> raw `[0,255]` to a `MobileNetV3Small` backbone with `include_preprocessing=True`
+> (the single, in-graph normalization — no manual rescaling). In-model augmentation
+> (RandomFlip H+V, RandomRotation, RandomContrast) is active only at train time, so
+> eval/predict reuse the identical graph with augmentation off. Two-phase training:
+> head-only (lr 1e-3) then top-40-layer fine-tune (lr 1e-5, BatchNorm frozen), with
+> the checkpoint chosen on max validation AUROC. The 90/10 split is **WSI-grouped**
+> (`GroupShuffleSplit` over the 216 source Camelyon16 slides) so no slide's patches
+> leak across train/val — the single biggest driver of an honest val estimate here.
+>
+> **Results (full run, 200,026 train / 19,999 val patches, 216 slides):**
+> **held-out WSI-grouped val AUROC = 0.906**; **Kaggle late-submission public LB =
+> 0.9074**, private LB = 0.8763. Head-only training reached the ceiling by epoch 6
+> (0.896→0.906); fine-tuning the top 40 layers at lr 1e-5 did **not** improve val
+> AUROC, so EarlyStopping restored the head-only weights. The near-identical val
+> (0.906) and public-LB (0.907) numbers indicate the grouped split is well
+> calibrated. Reproduce: `make train && make eval && make predict` on Kaggle GPU
+> with `configs/baseline.yaml`.
 
 ## Provenance
 - Metric, format, late-submission status: Kaggle competition page (verified 2026-07-06).
