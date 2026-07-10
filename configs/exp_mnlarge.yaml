@@ -1,0 +1,39 @@
+# Larger MobileNet: MobileNetV3Large (same family as the 0.906 baseline, more capacity;
+# better bet than EfficientNet at 96px per the B0 result).
+seed: 1337
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.1
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz
+  sample_n: null
+  cache: true
+train:
+  batch_size: 256
+  epochs_head: 6
+  epochs_finetune: 6
+  lr_head: 0.001
+  lr_finetune: 1.0e-05
+  finetune_unfreeze_layers: 40
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: true
+model:
+  backbone: MobileNetV3Large
+  weights: imagenet
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv
