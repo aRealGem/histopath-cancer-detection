@@ -24,6 +24,7 @@ _BACKBONES = {
     "MobileNetV3Large": tf.keras.applications.MobileNetV3Large,
     "EfficientNetV2B0": tf.keras.applications.EfficientNetV2B0,
     "EfficientNetV2B1": tf.keras.applications.EfficientNetV2B1,
+    "EfficientNetV2S": tf.keras.applications.EfficientNetV2S,
 }
 
 
@@ -110,7 +111,11 @@ def build_model(cfg: dict) -> tf.keras.Model:
         weights=cfg["model"]["weights"],
         include_preprocessing=True,
     )
-    backbone.trainable = False  # phase 1
+    # Transfer mode: freeze the backbone for phase 1. From-scratch mode (random
+    # init): the backbone must be trainable from the start (there's nothing useful
+    # to keep frozen), and train.py runs a single end-to-end phase.
+    from_scratch = bool(cfg["train"].get("from_scratch", False))
+    backbone.trainable = from_scratch
 
     inputs = tf.keras.Input((size, size, 3), dtype="uint8", name="image")
     # Cast uint8 -> float32 with an identity Rescaling(scale=1.0). Keras 3 forbids
@@ -120,7 +125,9 @@ def build_model(cfg: dict) -> tf.keras.Model:
     # still does the one-and-only [0,255] normalization; no double-normalize).
     x = layers.Rescaling(1.0, name="to_float")(inputs)
     x = _augmenter(cfg)(x)
-    x = backbone(x, training=False)
+    # Transfer: keep the backbone (incl. BatchNorm) in inference mode. From-scratch:
+    # let it follow the outer training flag so BatchNorm learns its own statistics.
+    x = backbone(x) if from_scratch else backbone(x, training=False)
     x = layers.GlobalAveragePooling2D(name="gap")(x)
     x = layers.Dropout(cfg["train"]["dropout"], name="drop")(x)
     outputs = layers.Dense(1, activation="sigmoid", dtype="float32", name="tumor_prob")(x)

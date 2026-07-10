@@ -57,19 +57,25 @@ def run(cfg: dict) -> Path:
 
     cbs = _callbacks(cfg, out_dir)
 
-    log.info("Phase 1: training head (backbone frozen)")
-    net.fit(train_ds, validation_data=val_ds, epochs=cfg["train"]["epochs_head"], callbacks=cbs)
+    if cfg["train"].get("from_scratch"):
+        # Random init: one end-to-end phase (backbone already trainable) at lr_head.
+        log.info("From-scratch: single-phase end-to-end training (%d epochs)",
+                 cfg["train"]["epochs_head"])
+        net.fit(train_ds, validation_data=val_ds, epochs=cfg["train"]["epochs_head"], callbacks=cbs)
+    else:
+        log.info("Phase 1: training head (backbone frozen)")
+        net.fit(train_ds, validation_data=val_ds, epochs=cfg["train"]["epochs_head"], callbacks=cbs)
 
-    if cfg["train"]["epochs_finetune"] > 0:
-        log.info("Phase 2: fine-tuning top %d backbone layers",
-                 cfg["train"]["finetune_unfreeze_layers"])
-        model_mod.unfreeze_top(net, cfg["train"]["finetune_unfreeze_layers"])
-        model_mod.compile_model(net, cfg["train"]["lr_finetune"], cfg)  # recompile after trainable change
-        net.fit(
-            train_ds, validation_data=val_ds,
-            epochs=cfg["train"]["epochs_head"] + cfg["train"]["epochs_finetune"],
-            initial_epoch=cfg["train"]["epochs_head"], callbacks=cbs,
-        )
+        if cfg["train"]["epochs_finetune"] > 0:
+            log.info("Phase 2: fine-tuning top %d backbone layers",
+                     cfg["train"]["finetune_unfreeze_layers"])
+            model_mod.unfreeze_top(net, cfg["train"]["finetune_unfreeze_layers"])
+            model_mod.compile_model(net, cfg["train"]["lr_finetune"], cfg)  # recompile after trainable change
+            net.fit(
+                train_ds, validation_data=val_ds,
+                epochs=cfg["train"]["epochs_head"] + cfg["train"]["epochs_finetune"],
+                initial_epoch=cfg["train"]["epochs_head"], callbacks=cbs,
+            )
 
     best = out_dir / cfg["paths"]["best_ckpt"]
     log.info("Best checkpoint (by val AUROC) saved: %s", best)
