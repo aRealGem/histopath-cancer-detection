@@ -153,8 +153,11 @@ def compile_model(model: tf.keras.Model, lr: float, cfg: dict) -> None:
     loss = tf.keras.losses.BinaryCrossentropy(
         label_smoothing=cfg["train"].get("label_smoothing", 0.0)
     )
+    # AdamW with decoupled weight decay. weight_decay=0.0 (default) is exactly Adam,
+    # so this changes nothing for prior runs; set train.weight_decay>0 to regularize.
+    wd = float(cfg["train"].get("weight_decay", 0.0))
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(lr),
+        optimizer=tf.keras.optimizers.AdamW(learning_rate=lr, weight_decay=wd),
         loss=loss,
         metrics=[tf.keras.metrics.AUC(name="auc"), tf.keras.metrics.BinaryAccuracy(name="acc")],
     )
