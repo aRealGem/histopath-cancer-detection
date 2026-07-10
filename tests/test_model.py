@@ -27,7 +27,8 @@ def _cfg(backbone: str) -> dict:
         "train": {"dropout": 0.3, "label_smoothing": 0.0},
         "model": {"backbone": backbone, "weights": None},
         "augment": {"horizontal_flip": True, "vertical_flip": True,
-                    "rotation_factor": 0.5, "contrast_factor": 0.1, "stain_jitter": 0.05},
+                    "rotation_factor": 0.5, "contrast_factor": 0.1, "stain_jitter": 0.05,
+                    "zoom_factor": 0.1, "brightness_factor": 0.1},
     }
 
 

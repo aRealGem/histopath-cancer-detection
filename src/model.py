@@ -96,6 +96,11 @@ def _augmenter(cfg: dict) -> tf.keras.Sequential:
         steps.append(layers.RandomRotation(a["rotation_factor"], fill_mode="reflect"))
     if a.get("contrast_factor"):
         steps.append(layers.RandomContrast(a["contrast_factor"]))
+    if a.get("zoom_factor"):
+        steps.append(layers.RandomZoom(a["zoom_factor"], fill_mode="reflect"))
+    if a.get("brightness_factor"):
+        # value_range matches our raw [0,255] pipeline (no double-normalize).
+        steps.append(layers.RandomBrightness(a["brightness_factor"], value_range=(0.0, 255.0)))
     return tf.keras.Sequential(steps, name="augment")
 
 

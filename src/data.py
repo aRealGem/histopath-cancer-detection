@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from sklearn.model_selection import GroupShuffleSplit, train_test_split
+from sklearn.model_selection import GroupShuffleSplit, StratifiedGroupKFold, train_test_split
 
 from src.utils import get_logger
 
@@ -102,6 +102,35 @@ def split_train_val(cfg: dict, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataF
         "(%d train / %d val slides; no slide shared).",
         len(tr), len(va), merged["wsi"].nunique(),
         tr["wsi"].nunique(), va["wsi"].nunique(),
+    )
+    return tr[["id", "label"]], va[["id", "label"]]
+
+
+def split_kfold(cfg: dict, df: pd.DataFrame, fold: int, n_folds: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return (train_df, val_df) for one fold of a StratifiedGroupKFold split.
+
+    Groups = whole-slide image (no slide's patches split across a fold's train/val),
+    stratified by label (each fold preserves the class balance). Requires wsi_map_csv.
+    Deterministic given seed + fold. Concatenating the val_df across all folds yields
+    an out-of-fold (OOF) cover of the whole training set for an honest CV estimate.
+    """
+    wsi_map = cfg["data"].get("wsi_map_csv")
+    if not wsi_map or not Path(wsi_map).exists():
+        raise ValueError("k-fold CV requires a valid data.wsi_map_csv (grouping by slide)")
+    wsi = pd.read_csv(wsi_map)
+    merged = df.merge(wsi, on="id", how="left")
+    if merged["wsi"].isna().any():
+        raise ValueError("wsi_map_csv is missing ids present in train_labels.csv")
+
+    skf = StratifiedGroupKFold(n_splits=n_folds, shuffle=True, random_state=cfg["seed"])
+    splits = list(skf.split(merged, y=merged["label"], groups=merged["wsi"]))
+    tr_idx, va_idx = splits[fold]
+    tr, va = merged.iloc[tr_idx], merged.iloc[va_idx]
+    log.info(
+        "Fold %d/%d: %d train / %d val patches across %d slides "
+        "(%d train / %d val slides) | val pos-rate=%.3f",
+        fold, n_folds, len(tr), len(va), merged["wsi"].nunique(),
+        tr["wsi"].nunique(), va["wsi"].nunique(), va["label"].mean(),
     )
     return tr[["id", "label"]], va[["id", "label"]]
 
