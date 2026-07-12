@@ -28,3 +28,4 @@ __pycache__/
 venv*/
 .ipynb_checkpoints/
 .DS_Store
+!data/wsi/wsi_domain_k2.csv
