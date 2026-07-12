@@ -72,6 +72,49 @@ def test_hed_jitter_identity_at_inference_and_in_range():
     assert jit.min() >= 0.0 and jit.max() <= 255.0, "stain jitter must stay in [0,255]"
 
 
+def _cfg_domain(grl: bool, k: int = 2) -> dict:
+    c = _cfg("MobileNetV3Small")
+    c["model"]["domain_head"] = {
+        "enabled": True, "num_domains": k, "grl": grl,
+        "grl_lambda": 1.0, "hidden": 64, "loss_weight": 0.1,
+    }
+    return c
+
+
+@pytest.mark.parametrize("grl", [True, False])
+def test_domain_head_two_outputs(grl):
+    """DANN (grl=True) and cooperative dual-head (grl=False) both expose a tumor head
+    (None,1 sigmoid) and a domain head (None,K softmax) off the shared features."""
+    net = M.build_model(_cfg_domain(grl, k=2))
+    assert len(net.outputs) == 2, "domain head must add a second output"
+    tumor = net.get_layer("tumor_prob")
+    dom = net.get_layer("domain")
+    assert tuple(tumor.output.shape) == (None, 1)
+    assert tuple(dom.output.shape) == (None, 2)
+
+
+def test_grl_present_only_when_adversarial():
+    """The GradientReversal layer exists for DANN (grl=True) and is ABSENT for the
+    cooperative dual-head (grl=False) — the single toggle that separates the two."""
+    dann = M.build_model(_cfg_domain(True))
+    coop = M.build_model(_cfg_domain(False))
+    assert any(isinstance(l, M.GradientReversal) for l in dann.layers), "DANN needs a GRL"
+    assert not any(isinstance(l, M.GradientReversal) for l in coop.layers), \
+        "cooperative dual-head must have NO gradient reversal"
+
+
+def test_inference_model_strips_domain_head():
+    """to_inference_model reduces a trained two-head model to a single (None,1) tumor
+    output, so evaluate/predict/tta_eval load it exactly like the baseline."""
+    net = M.build_model(_cfg_domain(True))
+    infer = M.to_inference_model(net)
+    assert len(infer.outputs) == 1
+    assert infer.output_shape == (None, 1)
+    # single-head models pass through unchanged
+    plain = M.build_model(_cfg("MobileNetV3Small"))
+    assert M.to_inference_model(plain) is plain
+
+
 def test_all_config_backbones_registered():
     """Every run-config's backbone must exist in _BACKBONES (catches typos/mismatch)."""
     import yaml

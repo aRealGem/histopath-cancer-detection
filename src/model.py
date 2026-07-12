@@ -29,6 +29,36 @@ _BACKBONES = {
 
 
 @tf.keras.utils.register_keras_serializable(package="histopath")
+class GradientReversal(layers.Layer):
+    """Gradient Reversal Layer (Ganin & Lempitsky, 2016) for domain-adversarial
+    training (DANN). Forward pass is identity; on the backward pass it multiplies
+    the gradient by -lambda. Placed before a domain (stain/center) classifier head,
+    it pushes the shared features to become domain-INVARIANT (the feature extractor
+    is trained to fool the domain head). lambda is usually ramped 0->1 during training.
+    """
+
+    def __init__(self, lamb: float = 1.0, **kwargs):
+        super().__init__(**kwargs)
+        self.lamb = float(lamb)
+
+    def call(self, inputs):
+        lamb = self.lamb
+
+        @tf.custom_gradient
+        def _reverse(x):
+            def grad(dy):
+                return -lamb * dy
+            return tf.identity(x), grad
+
+        return _reverse(inputs)
+
+    def get_config(self):
+        cfg = super().get_config()
+        cfg.update(lamb=self.lamb)
+        return cfg
+
+
+@tf.keras.utils.register_keras_serializable(package="histopath")
 class RandomHEDJitter(layers.Layer):
     """H&E stain-color augmentation via HED color deconvolution (Tellez et al. 2019).
 
@@ -133,11 +163,29 @@ def build_model(cfg: dict) -> tf.keras.Model:
     # Transfer: keep the backbone (incl. BatchNorm) in inference mode. From-scratch:
     # let it follow the outer training flag so BatchNorm learns its own statistics.
     x = backbone(x) if from_scratch else backbone(x, training=False)
-    x = layers.GlobalAveragePooling2D(name="gap")(x)
-    x = layers.Dropout(cfg["train"]["dropout"], name="drop")(x)
-    outputs = layers.Dense(1, activation="sigmoid", dtype="float32", name="tumor_prob")(x)
+    feat = layers.GlobalAveragePooling2D(name="gap")(x)          # shared representation
+    h = layers.Dropout(cfg["train"]["dropout"], name="drop")(feat)
+    tumor = layers.Dense(1, activation="sigmoid", dtype="float32", name="tumor_prob")(h)
 
-    return tf.keras.Model(inputs, outputs, name=f"{name}_pcam")
+    dh = cfg["model"].get("domain_head") or {}
+    if not dh.get("enabled"):
+        return tf.keras.Model(inputs, tumor, name=f"{name}_pcam")
+
+    # --- Second head off the SAME shared features (feat), for stain-domain labels. ---
+    # grl=True  -> DANN: the domain branch sits behind a GradientReversal, so the
+    #   feature extractor is trained to *destroy* the slide/stain signature
+    #   (adversarial domain-INVARIance). grl=False -> cooperative multitask: the same
+    #   features must *predict* domain, a regularizing auxiliary task (no reversal).
+    # Either way this head is TRAIN-ONLY; train.py exports a single-head (tumor_prob)
+    # inference model, so evaluate/predict/tta_eval stay unchanged.
+    use_grl = dh.get("grl", True)
+    g = GradientReversal(dh.get("grl_lambda", 1.0), name="grl")(feat) if use_grl else feat
+    g = layers.Dropout(cfg["train"]["dropout"], name="dom_drop")(g)
+    g = layers.Dense(dh.get("hidden", 64), activation="relu", name="dom_hidden")(g)
+    domain = layers.Dense(int(dh["num_domains"]), activation="softmax",
+                          dtype="float32", name="domain")(g)
+    kind = "dann" if use_grl else "dualhead"
+    return tf.keras.Model(inputs, [tumor, domain], name=f"{name}_{kind}")
 
 
 def _find_backbone(model: tf.keras.Model) -> tf.keras.Model:
@@ -150,17 +198,47 @@ def _find_backbone(model: tf.keras.Model) -> tf.keras.Model:
 
 
 def compile_model(model: tf.keras.Model, lr: float, cfg: dict) -> None:
-    loss = tf.keras.losses.BinaryCrossentropy(
+    tumor_loss = tf.keras.losses.BinaryCrossentropy(
         label_smoothing=cfg["train"].get("label_smoothing", 0.0)
     )
     # AdamW with decoupled weight decay. weight_decay=0.0 (default) is exactly Adam,
     # so this changes nothing for prior runs; set train.weight_decay>0 to regularize.
     wd = float(cfg["train"].get("weight_decay", 0.0))
+    opt = tf.keras.optimizers.AdamW(learning_rate=lr, weight_decay=wd)
+
+    # Two-head (DANN / dual-head): per-output losses + weights. The domain head uses
+    # sparse-categorical (int stain-domain labels). For DANN the GradientReversal is
+    # what makes minimizing domain loss push the shared features toward invariance;
+    # loss_weight scales the domain term (lambda in the DANN paper).
+    if len(model.outputs) > 1:
+        dh = cfg["model"].get("domain_head") or {}
+        model.compile(
+            optimizer=opt,
+            loss={"tumor_prob": tumor_loss,
+                  "domain": tf.keras.losses.SparseCategoricalCrossentropy()},
+            loss_weights={"tumor_prob": 1.0, "domain": float(dh.get("loss_weight", 0.1))},
+            metrics={"tumor_prob": [tf.keras.metrics.AUC(name="auc"),
+                                    tf.keras.metrics.BinaryAccuracy(name="acc")],
+                     "domain": [tf.keras.metrics.SparseCategoricalAccuracy(name="acc")]},
+        )
+        return
+
     model.compile(
-        optimizer=tf.keras.optimizers.AdamW(learning_rate=lr, weight_decay=wd),
-        loss=loss,
+        optimizer=opt,
+        loss=tumor_loss,
         metrics=[tf.keras.metrics.AUC(name="auc"), tf.keras.metrics.BinaryAccuracy(name="acc")],
     )
+
+
+def to_inference_model(model: tf.keras.Model) -> tf.keras.Model:
+    """Strip a trained two-head (DANN/dual-head) model down to a single-output
+    tumor-probability model, so evaluate.py / predict.py / tta_eval.py load and run
+    it exactly like the baseline. No-op (returns as-is) for an already single-head
+    model."""
+    if len(model.outputs) == 1:
+        return model
+    tumor = model.get_layer("tumor_prob").output
+    return tf.keras.Model(model.input, tumor, name="tumor_inference")
 
 
 def unfreeze_top(model: tf.keras.Model, n_layers: int) -> None:

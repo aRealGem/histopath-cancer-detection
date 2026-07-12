@@ -1,0 +1,49 @@
+# Smoke: cooperative dual-head plumbing (grl:false). Hermetic (weights:null).
+# weights:null keeps it hermetic (no download); validates graph/data/train/export, not accuracy.
+seed: 1337
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.1
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz
+  domain_csv: ./data/wsi/wsi_domain_k2.csv
+  sample_n: 2000
+  cache: false
+train:
+  batch_size: 64
+  epochs_head: 2
+  epochs_finetune: 0
+  lr_head: 1.0e-3
+  lr_finetune: 1.0e-5
+  lr_domain: 1.0e-4
+  finetune_unfreeze_layers: 20
+  domain_unfreeze_layers: 20
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: false
+model:
+  backbone: MobileNetV3Small
+  weights: null
+  domain_head:
+    enabled: true
+    num_domains: 2
+    grl: false
+    grl_lambda: 1.0
+    hidden: 64
+    loss_weight: 0.2
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv

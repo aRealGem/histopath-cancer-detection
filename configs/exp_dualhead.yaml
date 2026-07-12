@@ -1,0 +1,54 @@
+# Cooperative dual-head MobileNetV3Small — multitask (NO gradient reversal).
+# Same two-head structure as DANN, but the domain head COOPERATIVELY predicts the
+# stain/scanner id from the shared features (grl:false). This is auxiliary-task
+# regularization: forcing the representation to also encode a coarse, honest slide
+# attribute can improve generalization without erasing color (which we know carries
+# signal). The softer, lower-risk sibling of DANN.
+# Single-phase: top-N backbone layers unfrozen so the auxiliary task shapes features.
+seed: 1337
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.1
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz
+  domain_csv: ./data/wsi/wsi_domain_k2.csv
+  sample_n: null
+  cache: true
+train:
+  batch_size: 256
+  epochs_head: 15
+  epochs_finetune: 0
+  lr_head: 1.0e-3
+  lr_finetune: 1.0e-5
+  lr_domain: 1.0e-4
+  finetune_unfreeze_layers: 40
+  domain_unfreeze_layers: 40
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: true
+model:
+  backbone: MobileNetV3Small
+  weights: imagenet
+  domain_head:
+    enabled: true
+    num_domains: 2
+    grl: false               # cooperative multitask (no reversal)
+    grl_lambda: 1.0          # ignored when grl:false
+    hidden: 64
+    loss_weight: 0.2         # auxiliary-task weight (a bit higher than DANN)
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv

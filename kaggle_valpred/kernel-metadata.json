@@ -1,0 +1,17 @@
+{
+  "id": "jackiemartindale/histopath-valpred",
+  "title": "histopath-valpred",
+  "code_file": "val_predict_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["jackiemartindale/histopath-baseline-code"],
+  "competition_sources": ["histopathologic-cancer-detection"],
+  "kernel_sources": [
+    "jackiemartindale/histopath-mobilenetv3-fulltrain",
+    "jackiemartindale/histopath-scratch-full",
+    "jackiemartindale/histopath-cjitter"
+  ]
+}

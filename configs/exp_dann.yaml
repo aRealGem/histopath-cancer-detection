@@ -1,0 +1,54 @@
+# DANN — domain-adversarial MobileNetV3Small (Ganin & Lempitsky 2016).
+# Malignancy head + domain head behind a GradientReversal layer, trained on the K=2
+# stain/scanner labels (RUMC 20x vs UMCU 40x). The reversal pushes the shared features
+# to become stain-INVARIANT, the surgical version of the color-invariance we tried
+# bluntly (stain-aug, color-jitter) and that failed. Tempered expectations: prior
+# evidence says the public->private gap is not purely a stain shift.
+# Single-phase: top-N backbone layers unfrozen so gradients reach the representation.
+seed: 1337
+data:
+  root: /kaggle/input/histopathologic-cancer-detection
+  train_dir: train
+  test_dir: test
+  labels_csv: train_labels.csv
+  image_ext: .tif
+  image_size: 96
+  val_fraction: 0.1
+  wsi_map_csv: ./data/wsi/patch_id_wsi_full.csv.gz
+  domain_csv: ./data/wsi/wsi_domain_k2.csv
+  sample_n: null
+  cache: true
+train:
+  batch_size: 256
+  epochs_head: 15
+  epochs_finetune: 0
+  lr_head: 1.0e-3
+  lr_finetune: 1.0e-5
+  lr_domain: 1.0e-4          # fine-tune-ish LR: trains random-init heads + top backbone
+  finetune_unfreeze_layers: 40
+  domain_unfreeze_layers: 40  # top-N unfrozen so GRL can shape shared features
+  dropout: 0.3
+  label_smoothing: 0.0
+  early_stopping_patience: 4
+  reduce_lr_patience: 2
+  mixed_precision: true
+model:
+  backbone: MobileNetV3Small
+  weights: imagenet
+  domain_head:
+    enabled: true
+    num_domains: 2            # K=2 stain-domain clusters (configurable; try 7 later)
+    grl: true                # DANN (adversarial). grl:false -> cooperative dual-head.
+    grl_lambda: 1.0          # reversal strength (fixed; 0->1 ramp is a future knob)
+    hidden: 64
+    loss_weight: 0.1         # domain-loss weight; conservative to temper the adversary
+augment:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_factor: 0.5
+  contrast_factor: 0.1
+paths:
+  out_dir: ./artifacts
+  best_ckpt: best.keras
+  history_csv: history.csv
+  submission_csv: submission.csv

@@ -135,6 +135,34 @@ def split_kfold(cfg: dict, df: pd.DataFrame, fold: int, n_folds: int) -> tuple[p
     return tr[["id", "label"]], va[["id", "label"]]
 
 
+def attach_domains(cfg: dict, df: pd.DataFrame) -> pd.DataFrame:
+    """Add an int ``domain`` column (stain/scanner cluster) to a train/val frame.
+
+    Maps each patch -> its whole-slide id (wsi_map_csv) -> its domain label
+    (domain_csv, columns wsi,domain). Used only when a domain head is enabled; the
+    resulting column makes make_train_val_datasets emit dual (tumor, domain) targets.
+    """
+    wsi_map = cfg["data"].get("wsi_map_csv")
+    dom_csv = cfg["data"].get("domain_csv")
+    if not wsi_map or not Path(wsi_map).exists():
+        raise ValueError("domain head needs a valid data.wsi_map_csv (id->wsi)")
+    if not dom_csv or not Path(dom_csv).exists():
+        raise ValueError("domain head needs a valid data.domain_csv (wsi,domain)")
+    wsi = pd.read_csv(wsi_map)          # id, wsi
+    dom = pd.read_csv(dom_csv)          # wsi, domain
+    if not {"wsi", "domain"}.issubset(dom.columns):
+        raise ValueError(f"{dom_csv} must have columns wsi,domain; got {list(dom.columns)}")
+    merged = df.merge(wsi, on="id", how="left").merge(dom, on="wsi", how="left")
+    if merged["domain"].isna().any():
+        n = int(merged["domain"].isna().sum())
+        raise ValueError(f"domain_csv/wsi_map missing domain for {n} ids")
+    out = df.copy()
+    out["domain"] = merged["domain"].astype("int32").values
+    log.info("Attached K=%d domain labels; distribution=%s",
+             out["domain"].nunique(), out["domain"].value_counts().to_dict())
+    return out
+
+
 def _decode_tif(path_bytes: tf.Tensor, size: int) -> np.ndarray:
     path = path_bytes.numpy().decode("utf-8")
     img = cv2.imread(path, cv2.IMREAD_COLOR)  # BGR, uint8, HxWx3
@@ -155,6 +183,16 @@ def _make_reader(size: int):
     return _read
 
 
+def _make_reader_dom(size: int):
+    """Reader that emits dual named targets for a two-head (DANN/dual-head) model."""
+    def _read(path: tf.Tensor, y, d):
+        img = tf.py_function(lambda p: _decode_tif(p, size), [path], tf.uint8)
+        img.set_shape([size, size, 3])
+        return img, {"tumor_prob": y, "domain": d}
+
+    return _read
+
+
 def _paths(image_dir: Path, ids, ext: str) -> list[str]:
     return [str(image_dir / f"{i}{ext}") for i in ids]
 
@@ -167,12 +205,20 @@ def make_train_val_datasets(
     ext = cfg["data"]["image_ext"]
     bs = cfg["train"]["batch_size"]
     cache = cfg["data"].get("cache", False)
-    reader = _make_reader(size)
 
     def build(df: pd.DataFrame, training: bool) -> tf.data.Dataset:
         paths = _paths(train_dir, df["id"].tolist(), ext)
         labels = df["label"].astype("float32").tolist()
-        ds = tf.data.Dataset.from_tensor_slices((paths, labels))
+        # Two-head training: carry a per-patch int domain label alongside the tumor
+        # label. Presence of the 'domain' column (attach_domains) drives this; the
+        # inference callers pass single-label frames and are unaffected.
+        if "domain" in df.columns:
+            doms = df["domain"].astype("int32").tolist()
+            ds = tf.data.Dataset.from_tensor_slices((paths, labels, doms))
+            reader = _make_reader_dom(size)
+        else:
+            ds = tf.data.Dataset.from_tensor_slices((paths, labels))
+            reader = _make_reader(size)
         if cache:
             # Decode once, cache decoded images, THEN shuffle so each epoch
             # reshuffles (a shuffle placed before cache would freeze one order).

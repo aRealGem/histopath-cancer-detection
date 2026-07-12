@@ -16,19 +16,21 @@ from src.utils import enable_mixed_precision, get_logger, load_config, set_seed
 log = get_logger()
 
 
-def _callbacks(cfg: dict, out_dir: Path) -> list[tf.keras.callbacks.Callback]:
+def _callbacks(cfg: dict, out_dir: Path, monitor: str = "val_auc") -> list[tf.keras.callbacks.Callback]:
+    # With a domain head the tumor metric is namespaced (val_tumor_prob_auc). We still
+    # checkpoint/early-stop on the MALIGNANCY AUROC — the domain head is only a means.
     ckpt = out_dir / cfg["paths"]["best_ckpt"]
     return [
         tf.keras.callbacks.ModelCheckpoint(
-            str(ckpt), monitor="val_auc", mode="max", save_best_only=True, verbose=1
+            str(ckpt), monitor=monitor, mode="max", save_best_only=True, verbose=1
         ),
         tf.keras.callbacks.EarlyStopping(
-            monitor="val_auc", mode="max",
+            monitor=monitor, mode="max",
             patience=cfg["train"]["early_stopping_patience"],
             restore_best_weights=True, verbose=1,
         ),
         tf.keras.callbacks.ReduceLROnPlateau(
-            monitor="val_auc", mode="max", factor=0.3,
+            monitor=monitor, mode="max", factor=0.3,
             patience=cfg["train"]["reduce_lr_patience"], verbose=1,
         ),
         tf.keras.callbacks.CSVLogger(str(out_dir / cfg["paths"]["history_csv"]), append=True),
@@ -49,9 +51,41 @@ def run(cfg: dict) -> Path:
     log.info("Split: %d train / %d val | train pos-rate=%.3f",
              len(train_df), len(val_df), train_df["label"].mean())
 
+    domain = bool((cfg["model"].get("domain_head") or {}).get("enabled"))
+    if domain:
+        train_df = data.attach_domains(cfg, train_df)
+        val_df = data.attach_domains(cfg, val_df)
+
     train_ds, val_ds = data.make_train_val_datasets(cfg, train_df, val_df)
 
     net = model_mod.build_model(cfg)
+
+    # --- Two-head (DANN / cooperative dual-head): single end-to-end phase. -----------
+    # The domain branch only shapes the representation if gradients reach the backbone,
+    # so (unless from-scratch, already fully trainable) we unfreeze the top-N layers.
+    # We checkpoint on the malignancy AUROC and export a single-head inference model.
+    if domain:
+        if not cfg["train"].get("from_scratch"):
+            n = cfg["train"].get("domain_unfreeze_layers", cfg["train"]["finetune_unfreeze_layers"])
+            model_mod.unfreeze_top(net, n)
+            log.info("Domain head: unfroze top %d backbone layers for feature adaptation", n)
+        lr = cfg["train"].get("lr_domain", cfg["train"]["lr_head"])
+        model_mod.compile_model(net, lr, cfg)
+        net.summary(print_fn=log.info)
+        dh = cfg["model"]["domain_head"]
+        log.info("Two-head training: grl=%s lambda=%s K=%s loss_weight=%s, %d epochs @ lr=%g",
+                 dh.get("grl", True), dh.get("grl_lambda", 1.0), dh.get("num_domains"),
+                 dh.get("loss_weight", 0.1), cfg["train"]["epochs_head"], lr)
+        cbs = _callbacks(cfg, out_dir, monitor="val_tumor_prob_auc")
+        net.fit(train_ds, validation_data=val_ds,
+                epochs=cfg["train"]["epochs_head"], callbacks=cbs)
+        best = out_dir / cfg["paths"]["best_ckpt"]
+        # Overwrite the checkpoint (a 2-head model) with the tumor-only inference model
+        # so evaluate/predict/tta_eval load it exactly like the baseline.
+        model_mod.to_inference_model(net).save(best)
+        log.info("Saved single-head inference checkpoint (best malignancy weights): %s", best)
+        return best
+
     model_mod.compile_model(net, cfg["train"]["lr_head"], cfg)
     net.summary(print_fn=log.info)
 

@@ -1,0 +1,30 @@
+%% Intended diverse-architecture ensemble for PCam (CW-27).
+%% Members share the MobileNetV3-Small backbone (small params; only backbone that
+%% holds up at 96px) but differ in training regime, so their errors DECORRELATE.
+%% Two decision gates keep it honest: (1) OOF decorrelation decides membership +
+%% weights; (2) the private LB is the final arbiter (OOF is in-distribution).
+flowchart TD
+    D["train_labels.csv\n220,025 patches / 216 slides"] --> KF{{"StratifiedGroupKFold\nK=5 · group=slide · stratify=label\n(leak-free: no slide spans a fold)"}}
+
+    KF --> POOL
+
+    subgraph POOL["Member pool — diverse by training regime, chosen for decorrelation"]
+      A["A · MobileNetV3-Small\npretrained (ImageNet)\nchampion anchor · priv 0.891"]
+      B["B · MobileNetV3-Small\nfrom-scratch\nmost decorrelated · 0.51 mid"]
+      C["C · MobileNetV3-Small\nDANN (GRL, stain-invariant)\nnew build"]
+      E["D · MobileNetV3-Small\ndual-head (multitask stain-id)\nnew build"]
+    end
+
+    POOL --> F["each surviving member × 5 folds\n= trained models"]
+    F --> TTA["TTA · 8 flip/rotation views per model\n(the one proven win: +0.0145 private)"]
+
+    TTA --> OOF["OOF predictions\n(held-out fold, LABELED)"]
+    TTA --> TEST["TEST predictions\n(Kaggle test, per fold)"]
+
+    OOF --> G1{{"GATE 1 · decorrelation +\nblend-weight search\nkeep a member only if it adds\nINDEPENDENT signal"}}
+    TEST --> FA["fold-average per member"]
+
+    G1 --> BLEND["weighted blend\nw_A·pA + w_B·pB + w_C·pC + w_D·pD"]
+    FA --> BLEND
+    BLEND --> SUB["submission.csv"]
+    SUB --> G2{{"GATE 2 · PRIVATE LEADERBOARD\n= final arbiter\n(OOF blind to OOD gains)"}}
