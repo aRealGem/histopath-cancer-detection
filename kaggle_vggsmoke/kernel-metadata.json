@@ -1,0 +1,12 @@
+{
+  "id": "jackiemartindale/histopath-vgg-smoke",
+  "title": "histopath-vgg-smoke",
+  "code_file": "vgg_smoke_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["jackiemartindale/histopath-baseline-code"],
+  "competition_sources": ["histopathologic-cancer-detection"]
+}
