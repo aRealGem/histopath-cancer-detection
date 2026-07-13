@@ -15,16 +15,51 @@ from __future__ import annotations
 import tensorflow as tf
 from tensorflow.keras import layers
 
+def _build_tiny_vgg(input_shape, include_top=False, weights=None,
+                    include_preprocessing=True, **kwargs):
+    """Lean from-scratch VGG-style feature extractor for 96px H&E patches.
+
+    Motivated by Veeling et al. 2018 (the PCam paper): their best models were ~120K
+    params — far smaller than ImageNet backbones. On only 216 slides, low capacity
+    generalizes better and 'mirages' far less than a big from-scratch net. Design:
+    3x3 stride-1 convs with the FIRST downsample delayed until after two full-96x96
+    blocks, so fine-grained nuclear detail (the center 32x32 that defines the label)
+    survives the early layers. Lean widths 24/48/96 (~0.25M params).
+
+    ``weights`` is ignored (random init only). The net does its OWN [0,255]->[0,1]
+    normalization via a nested Rescaling — the single, one-and-only normalization,
+    exactly like the Keras applications' include_preprocessing, so the
+    no-double-normalize contract (tests/test_model.py) still holds. Returns a 4D
+    feature map; build_model adds the GlobalAveragePooling2D head.
+    """
+    inp = tf.keras.Input(shape=input_shape)
+    x = layers.Rescaling(1.0 / 255.0)(inp)   # nested; the only real normalization
+    for ch in (24, 48, 96):
+        x = layers.Conv2D(ch, 3, padding="same", use_bias=False)(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.ReLU()(x)
+        x = layers.Conv2D(ch, 3, padding="same", use_bias=False)(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.ReLU()(x)
+        x = layers.MaxPooling2D(2)(x)         # 96 -> 48 -> 24 -> 12
+    x = layers.Conv2D(96, 3, padding="same", use_bias=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.ReLU()(x)
+    return tf.keras.Model(inp, x, name="tiny_vgg")
+
+
 # All of these take include_preprocessing=True and the SAME raw-[0,255] input
 # contract (they normalize once, internally). That uniform contract is what lets
 # build_model stay backbone-agnostic and is asserted by tests/test_model.py so a
-# new backbone can't silently break the no-double-normalize rule.
+# new backbone can't silently break the no-double-normalize rule. TinyVGG follows
+# the same contract via its own nested Rescaling (see above).
 _BACKBONES = {
     "MobileNetV3Small": tf.keras.applications.MobileNetV3Small,
     "MobileNetV3Large": tf.keras.applications.MobileNetV3Large,
     "EfficientNetV2B0": tf.keras.applications.EfficientNetV2B0,
     "EfficientNetV2B1": tf.keras.applications.EfficientNetV2B1,
     "EfficientNetV2S": tf.keras.applications.EfficientNetV2S,
+    "TinyVGG": _build_tiny_vgg,
 }
 
 
