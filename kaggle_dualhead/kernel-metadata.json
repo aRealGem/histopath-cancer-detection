@@ -1,0 +1,13 @@
+{
+  "id": "jackiemartindale/histopath-dualhead-full",
+  "title": "histopath-dualhead-full",
+  "code_file": "train_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["jackiemartindale/histopath-baseline-code"],
+  "competition_sources": ["histopathologic-cancer-detection"],
+  "kernel_sources": []
+}

@@ -2,7 +2,7 @@
 # produce a blendable submission. CONFIG is set per-kernel.
 import os, sys, glob, shutil, gzip, zipfile, subprocess
 
-CONFIG = 'configs/exp_scratch_vgg.yaml'   # <-- per-kernel
+CONFIG = 'configs/exp_dualhead.yaml'   # <-- per-kernel
 
 ON_KAGGLE = os.path.exists('/kaggle/input')
 print('Kaggle' if ON_KAGGLE else 'local', '| config:', CONFIG)
@@ -53,11 +53,6 @@ for cf in glob.glob('configs/*.yaml'):
         c['data']['root'] = DATA_ROOT
         yaml.safe_dump(c, open(cf, 'w'), sort_keys=False)
 print('data.root ->', DATA_ROOT)
-
-# Time-insurance: trim epochs so a possible CPU-fallback can't run past Kaggle's 12h
-# cap with no output. Early-stopping (patience 5) still cuts it shorter if it plateaus.
-subprocess.run("sed -i 's/epochs_head: 30/epochs_head: 18/' configs/exp_scratch_vgg.yaml", shell=True)
-print('epochs_head trimmed to 18 for runtime safety')
 
 sys.path.insert(0, os.getcwd())
 
