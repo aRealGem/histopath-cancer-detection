@@ -26,6 +26,8 @@ import shutil
 import subprocess
 import time
 
+import numpy as np
+
 import blend_opt as B
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -54,9 +56,20 @@ HUMAN_CHAMPION = {
 DEFAULT_CONFIG = {
     "submit_budget_per_day": 3,
     "compute_budget_hours": 3.0,      # today's supervised proof-out; nightly override ~10
-    "no_gain_guard": 3,               # stop after N consecutive no-proxy-gain jobs
-    "proxy_candidate_threshold": 0.0005,
+    "no_gain_guard": 3,               # stop after N consecutive no-gain jobs
+    "corr_threshold": 0.90,           # a NEW member is a candidate iff its max test-pred
+                                      #   Spearman with every champion member is <= this
+    "new_member_share": 0.20,         # weight given to the new member (champion weights
+                                      #   scaled to 1-share); LB confirms; no OOF weight-overfit
     "confirm_metric": "private",      # LB field that decides a champion change
+}
+
+# Test-pred (submission) fallbacks for champion members that predate the loop.
+HUMAN_CHAMPION_SUBS = {
+    "champion": ["/tmp/champ_tta/repo/artifacts/submission_tta.csv"],
+    "tinyvgg": ["~/histopath-overnight/staged/tinyvgg_solo.csv"],
+    "p4m_reg": ["~/histopath-overnight/staged/p4m_reg_solo.csv"],
+    "p4m_dense": ["~/histopath-overnight/staged/p4m_dense_solo.csv"],
 }
 
 
@@ -148,7 +161,8 @@ def kaggle_latest_score(message, timeout_s=600):
                     status = (row.get("status") or row.get("Status") or "").lower()
                     pub = row.get("publicScore") or row.get("PublicScore") or ""
                     prv = row.get("privateScore") or row.get("PrivateScore") or ""
-                    if status in ("complete", "") and (pub or prv):
+                    # Kaggle returns e.g. "SubmissionStatus.COMPLETE" -> substring match.
+                    if ("complete" in status or status == "") and (pub or prv):
                         def _f(x):
                             try:
                                 return float(x)
@@ -218,70 +232,81 @@ def compute_proxy_for_weights(names, y, P, weights):
     return B.auroc(y, blend)
 
 
+def resolve_sub(name):
+    """Test-pred (submission) CSV for a member: loop members/ first, then staged fallbacks."""
+    cands = [os.path.join(MEMBERS, f"sub_{name}.csv")] + \
+            [os.path.expanduser(p) for p in HUMAN_CHAMPION_SUBS.get(name, [])]
+    return next((p for p in cands if p and os.path.exists(p)), None)
+
+
+def _load_preds(sub_map):
+    """Aligned test-pred arrays for {name: path} (intersection of ids)."""
+    preds, idset = {}, None
+    for n, p in sub_map.items():
+        _, d, _ = B._read_two_col(p); preds[n] = d
+        s = set(d); idset = s if idset is None else (idset & s)
+    ids = sorted(idset)
+    return {n: np.array([preds[n][i] for i in ids]) for n in sub_map}
+
+
 def recompute_and_gate(state, cfg, dry_run):
-    oof = current_oof_paths(state)
-    if len(oof) < 2:
-        emit({"kind": "gate_skip", "reason": "need >=2 members with OOF", "have": list(oof)})
-        return None
-    names, ids, y, P = B.load_oof(oof)
-    result = B.optimize(names, y, P)
-    for n in names:
-        state["members"][n]["solo_proxy"] = result["solo_auroc"][n]
-
-    # Establish the human champion's proxy the first time all its members are present.
+    """Decorrelation gate (decision #2 redesign). OOF-AUROC proved mirage-unreliable here
+    (inflated for overfit members) so it does NOT gate. Instead a NEW member is a candidate
+    iff its TEST-pred Spearman with EVERY champion member is <= corr_threshold — decorrelation
+    is the label-free signal of ensemble value, and the private LB is the sole arbiter of a
+    champion change. OOF, when present, is logged for solo sanity only (not for gating)."""
     champ = state["champion"]
-    if champ.get("proxy_auroc") is None and set(champ["members"]).issubset(set(names)):
-        champ["proxy_auroc"] = compute_proxy_for_weights(names, y, P, champ["weights"])
-        emit({"kind": "champion_proxy_established", "proxy": round(champ["proxy_auroc"], 6),
-              "note": "sanity vs known private 0.9523"})
-
-    # Anti-overfit gate: the baseline is the best OOF blend ACHIEVABLE OVER THE EXISTING
-    # member set (state["best_proxy"]), NOT the champion's hand-picked (private-tuned)
-    # weights. A job is a candidate only if its NEW member(s) raise the achievable best
-    # beyond baseline+threshold. This neutralizes the reweighting-overfit mirage: merely
-    # re-tuning the same members on the in-distribution OOF must never trigger a probe.
-    best = result["proxy_auroc"]
-    prev = state.get("best_proxy")
-    champ_proxy = champ.get("proxy_auroc")
-    emit({"kind": "optimize", "n_members": len(names), "best_proxy": best,
-          "prev_best_proxy": prev, "champion_handpicked_proxy": champ_proxy,
-          "weights": result["weights"], "corr": B.corr_matrix(names, P)})
-
-    if prev is None:
-        # Bootstrap: record the achievable baseline over the seed member set; no submit.
-        state["best_proxy"] = best
-        emit({"kind": "bootstrap_baseline", "best_proxy": best,
-              "note": "achievable OOF blend over existing members; no probe spent"})
+    champ_members = champ["members"]
+    champ_subs = {n: resolve_sub(n) for n in champ_members}
+    missing = [n for n, v in champ_subs.items() if v is None]
+    if missing:
+        emit({"kind": "gate_skip", "reason": "champion member sub(s) missing", "missing": missing})
+        return None
+    new_members = [n for n, m in state["members"].items()
+                   if n not in champ_members and resolve_sub(n) and not m.get("probed")]
+    if not new_members:
+        emit({"kind": "no_new_members", "champion_members": champ_members})
         return None
 
-    state["best_proxy"] = max(prev, best)
-    if best < prev + cfg["proxy_candidate_threshold"]:
+    best_cand = None
+    for nm in new_members:
+        preds = _load_preds({**champ_subs, nm: resolve_sub(nm)})
+        corrs = {c: round(B.spearman(preds[nm], preds[c]), 3) for c in champ_members}
+        max_corr = max(corrs.values())
+        state["members"][nm]["decorr"] = corrs
+        ok = max_corr <= cfg["corr_threshold"]
+        emit({"kind": "decorr_gate", "new_member": nm, "max_corr": max_corr, "corrs": corrs,
+              "threshold": cfg["corr_threshold"], "candidate": ok})
+        if ok and (best_cand is None or max_corr < best_cand["max_corr"]):
+            share = cfg["new_member_share"]
+            weights = {n: round(champ["weights"][n] * (1 - share), 4) for n in champ_members}
+            weights[nm] = share
+            best_cand = {"new": nm, "weights": weights, "max_corr": max_corr,
+                         "subs": {n: resolve_sub(n) for n in list(champ_members) + [nm]}}
+    if best_cand is None:
         state["no_gain_streak"] += 1
-        emit({"kind": "no_candidate", "best_proxy": best, "prev_best_proxy": prev,
+        emit({"kind": "no_candidate", "reason": "no new member below corr_threshold",
               "no_gain_streak": state["no_gain_streak"]})
-        return None
-    return {"names": names, "weights": result["weights"], "proxy": best, "ids": ids}
+    return best_cand
 
 
 def confirm_candidate(state, cfg, cand, jobid, dry_run):
     st = submits_today(state)
+    nm = cand["new"]
     if st["count"] >= cfg["submit_budget_per_day"]:
         emit({"kind": "budget_exhausted", "submits_today": st["count"],
-              "budget": cfg["submit_budget_per_day"], "held_candidate": cand["weights"]})
-        return
-    # Build the blend submission from member SUB (test-pred) CSVs.
-    sub_paths = {n: state["members"][n]["sub"] for n in cand["names"]
-                 if state["members"].get(n, {}).get("sub")}
-    if set(sub_paths) != set(cand["names"]):
-        emit({"kind": "candidate_missing_subs", "have": list(sub_paths), "need": cand["names"]})
+              "budget": cfg["submit_budget_per_day"], "held_candidate": nm})
         return
     os.makedirs(SUBS, exist_ok=True)
-    out = os.path.join(SUBS, f"auto_{jobid}_blend.csv")
-    B.blend_submissions(sub_paths, cand["weights"], out)
-    msg = f"[AUTOLOOP {jobid}] proxy={cand['proxy']:.5f} w={cand['weights']}"
+    out = os.path.join(SUBS, f"auto_{jobid}_{nm}_blend.csv")
+    B.blend_submissions(cand["subs"], cand["weights"], out)
+    # Concise message so Kaggle doesn't truncate it (readback matches on this string).
+    msg = f"[AUTOLOOP {jobid}] +{nm} s={cfg['new_member_share']} maxcorr={cand['max_corr']}"
+    state["members"].setdefault(nm, {})["probed"] = True   # never re-probe the same member
 
     if dry_run:
-        emit({"kind": "would_submit", "jobid": jobid, "file": out, "message": msg})
+        emit({"kind": "would_submit", "jobid": jobid, "new_member": nm, "file": out,
+              "message": msg, "weights": cand["weights"]})
         return
     ok, log = kaggle_submit(out, msg)
     st["count"] += 1
@@ -289,28 +314,30 @@ def confirm_candidate(state, cfg, cand, jobid, dry_run):
         emit({"kind": "submit_failed", "jobid": jobid, "log": log})
         return
     pub, prv = kaggle_latest_score(msg)
-    entry = {"jobid": jobid, "file": os.path.basename(out), "message": msg,
-             "public": pub, "private": prv, "origin": "autonomous", "ts": now()}
+    entry = {"jobid": jobid, "new_member": nm, "file": os.path.basename(out), "message": msg,
+             "weights": cand["weights"], "public": pub, "private": prv,
+             "origin": "autonomous", "ts": now()}
     st["log"].append(entry)
     emit({"kind": "submitted", **entry})
 
     champ = state["champion"]
     metric = cfg["confirm_metric"]
     cur = champ.get(metric)
-    new = {"private": prv, "public": pub}[metric]
-    if new is not None and (cur is None or new > cur):
+    new_score = {"private": prv, "public": pub}[metric]
+    if new_score is not None and (cur is None or new_score > cur):
         state["champion"] = {
-            "weights": cand["weights"], "members": cand["names"], "proxy_auroc": cand["proxy"],
+            "weights": cand["weights"], "members": list(cand["subs"].keys()),
             "public": pub, "private": prv, "origin": "autonomous", "jobid": jobid,
-            "submission_file": os.path.basename(out),
+            "added_member": nm, "submission_file": os.path.basename(out),
         }
         state["no_gain_streak"] = 0
-        emit({"kind": "champion_change", "jobid": jobid, "private": prv, "public": pub,
-              "weights": cand["weights"], "origin": "autonomous"})
+        emit({"kind": "champion_change", "jobid": jobid, "added_member": nm,
+              "private": prv, "public": pub, "weights": cand["weights"], "origin": "autonomous"})
     else:
         state["no_gain_streak"] += 1
-        emit({"kind": "candidate_not_confirmed", "jobid": jobid, "private": prv, "public": pub,
-              "champion_private": cur, "no_gain_streak": state["no_gain_streak"]})
+        emit({"kind": "candidate_not_confirmed", "jobid": jobid, "new_member": nm,
+              "private": prv, "public": pub, "champion_private": cur,
+              "no_gain_streak": state["no_gain_streak"]})
 
 
 # --------------------------------------------------------------- stop
