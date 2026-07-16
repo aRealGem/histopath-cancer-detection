@@ -9,7 +9,7 @@
   },
   "jobs": [
     {
-      "jobid": "job0",
+      "jobid": "job0b",
       "priority": 0,
       "status": "pending",
       "type": "oof_dump",
