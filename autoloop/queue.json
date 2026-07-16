@@ -55,7 +55,7 @@
       "notes": "Period-honest (2019) PyTorch equivariant member (QUVA-Lab e2cnn/escnn) — a genuinely new architecture family for decorrelation. Requires a PyTorch cell path in the Colab loop."
     },
     {
-      "jobid": "job4",
+      "jobid": "job4b",
       "priority": 4,
       "status": "pending",
       "type": "train",
