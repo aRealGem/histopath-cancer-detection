@@ -14,15 +14,9 @@
       "status": "pending",
       "type": "oof_dump",
       "origin": "human",
-      "members": ["champion", "tinyvgg", "p4m_reg", "p4m_dense"],
-      "checkpoints": {
-        "champion": "drive:models/champion_mobilenetv3/best.keras",
-        "tinyvgg": "drive:models/tinyvgg/best.keras",
-        "p4m_reg": "drive:models/p4m_reg/best.keras",
-        "p4m_dense": "drive:models/p4m_dense/best.keras"
-      },
+      "members": ["champion", "tinyvgg"],
       "emit_oof": true,
-      "notes": "BOOTSTRAP: inference-only. Dump OOF (id,label,pred=TTA) for the 4 existing champions on the fixed val split; copy their existing test submissions as sub_<member>.csv. p4m nets are D4-invariant so pred=no-TTA. If a Drive checkpoint is missing, retrain from repo (cheap on A100). This establishes the offline-proxy baseline that must reproduce the known ~0.9523 champion."
+      "notes": "BOOTSTRAP (Keras-3 members). Inference-only: auto-discover the champion + TinyVGG checkpoints on Drive, dump OOF (id,label,pred=TTA) on the fixed seed-1337 val split + emit their test submissions. The two p4m members need legacy Keras 2 and are dumped separately via notebooks/p4m_oof_dump_colab.py (pushes job_p4moof.json to colab-out, which process.py discovers independently). Together the four establish the offline-proxy baseline that must reproduce the known ~0.9523 champion."
     },
     {
       "jobid": "job1",

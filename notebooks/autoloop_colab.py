@@ -20,8 +20,11 @@
 # =============================================================================
 import os, sys, glob, json, time, shutil, gzip, zipfile, subprocess, traceback
 
-# --- p4m members need legacy Keras 2 (tf-keras) + keras-gcnn; harmless for the rest. ---
-os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
+# KERAS MODE: this loop runs under Keras 3 (champion, TinyVGG, and job1 are Keras-3 models).
+# The p4m members need legacy Keras 2 (tf-keras + keras-gcnn) which CANNOT coexist with
+# Keras 3 in one runtime -> p4m OOF is dumped once from the separate legacy p4m notebook,
+# and p4m TRAIN jobs (job2/job6) are handled there, not in this loop. Set
+# TF_USE_LEGACY_KERAS=1 in the environment ONLY if you intentionally run a p4m-only loop.
 
 COMP = "histopathologic-cancer-detection"
 JOBS_DS = "jackiemartindale/histopath-jobs"
@@ -257,16 +260,24 @@ def handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt):
     members, vstats = [], {}
     t0 = time.time()
     ckpts = discover_checkpoints(job["members"])
+    skipped = []
     for name in job["members"]:
         if name not in ckpts:
-            print("!! missing checkpoint for", name, "-> skip"); continue
-        net = tf.keras.models.load_model(ckpts[name], compile=False)
-        tta = "p4m" not in name        # p4m nets are D4-invariant -> TTA no-op
-        pv = predict(net, Xv, tta); pt = predict(net, Xt, tta)
+            print("!! missing checkpoint for", name, "-> skip"); skipped.append(name); continue
+        try:
+            net = tf.keras.models.load_model(ckpts[name], compile=False)
+            tta = "p4m" not in name    # p4m nets are D4-invariant -> TTA no-op
+            pv = predict(net, Xv, tta); pt = predict(net, Xt, tta)
+        except Exception as e:
+            # Expected for p4m under Keras 3 (needs legacy Keras 2) -> dump those from the
+            # legacy p4m notebook instead. Don't fail the whole bootstrap job.
+            print(f"!! {name} load/predict failed under this Keras runtime -> skip ({e})")
+            skipped.append(name); continue
         emit_member(name, ids_v, yv, pv, ids_t, pt)
         vstats[name] = {"val_auroc": round(auroc(yv, pv), 6)}
         members.append(name); print(f"  {name}: val AUROC {vstats[name]['val_auroc']}")
-    write_manifest(job, members, vstats, time.time() - t0)
+    write_manifest(job, members, vstats, time.time() - t0,
+                   extra={"skipped": skipped} if skipped else None)
 
 
 def _fit_keras(cfg, monitor, mode, epochs, out_ckpt):
