@@ -41,27 +41,67 @@ def sh(cmd, **kw):
 
 
 def kaggle_auth():
-    """NEW access-token auth (auth_method ACCESS_TOKEN), not the legacy 32-char key."""
-    tok = None
-    try:
-        from google.colab import userdata
-        tok = userdata.get("KAGGLE_ACCESS_TOKEN")
-    except Exception:
-        tok = os.environ.get("KAGGLE_ACCESS_TOKEN")
-    assert tok, "set Colab secret KAGGLE_ACCESS_TOKEN (KGAT_ token)"
-    os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
-    with open(os.path.expanduser("~/.kaggle/access_token"), "w") as f:
+    """Reuse the credentials the existing A100 notebook already established — no new
+    secret. Order: an already-present ~/.kaggle/access_token (the ACCESS_TOKEN method we
+    use) or kaggle.json; else an env/secret token as a last resort. Never overwrites a
+    working credential."""
+    kdir = os.path.expanduser("~/.kaggle")
+    os.environ["KAGGLE_CONFIG_DIR"] = kdir
+    if os.path.exists(os.path.join(kdir, "access_token")) or os.path.exists(os.path.join(kdir, "kaggle.json")):
+        return  # already authenticated by the notebook's setup cell
+    tok = os.environ.get("KAGGLE_ACCESS_TOKEN")
+    if not tok:
+        try:
+            from google.colab import userdata
+            tok = userdata.get("KAGGLE_ACCESS_TOKEN")
+        except Exception:
+            tok = None
+    assert tok, ("no Kaggle credential found — run your usual auth cell first (writes "
+                 "~/.kaggle/access_token), or set KAGGLE_ACCESS_TOKEN.")
+    os.makedirs(kdir, exist_ok=True)
+    with open(os.path.join(kdir, "access_token"), "w") as f:
         f.write(tok.strip())
-    os.environ["KAGGLE_CONFIG_DIR"] = os.path.expanduser("~/.kaggle")
 
 
-def drive_models_dir():
-    try:
-        from google.colab import userdata, drive
-        drive.mount("/content/drive", force_remount=False)
-        return userdata.get("DRIVE_MODELS_DIR") or "/content/drive/MyDrive/histopath/models"
-    except Exception:
-        return os.environ.get("DRIVE_MODELS_DIR", "/content/drive/MyDrive/histopath/models")
+# Member -> substrings that identify its checkpoint folder/file on Drive.
+_CKPT_ALIASES = {
+    "champion": ("champion", "mobilenetv3", "mnv3", "baseline"),
+    "tinyvgg": ("tinyvgg", "tiny_vgg"),
+    "p4m_reg": ("p4m_reg", "p4mreg", "reg"),
+    "p4m_dense": ("p4m_dense", "densenet", "dense"),
+}
+
+
+def mount_drive():
+    if not os.path.exists("/content/drive/MyDrive"):
+        try:
+            from google.colab import drive
+            drive.mount("/content/drive", force_remount=False)
+        except Exception as e:
+            print("drive mount skipped:", e)
+
+
+def discover_checkpoints(members):
+    """Auto-find each member's best.keras anywhere under Drive (or $DRIVE_MODELS_DIR),
+    so nothing new needs to be configured — these are the checkpoints the earlier code
+    saved. Matches by member-name aliases; prefers paths containing 'histopath'."""
+    roots = [os.environ.get("DRIVE_MODELS_DIR"), "/content/drive/MyDrive"]
+    cands = []
+    for r in roots:
+        if r and os.path.isdir(r):
+            cands += glob.glob(os.path.join(r, "**", "*.keras"), recursive=True)
+    cands = sorted(set(cands))
+    found = {}
+    for m in members:
+        aliases = _CKPT_ALIASES.get(m, (m,))
+        hits = [c for c in cands if any(a in c.lower() for a in aliases)]
+        hits.sort(key=lambda c: (0 if "histopath" in c.lower() else 1, len(c)))
+        if hits:
+            found[m] = hits[0]
+        else:
+            print(f"!! no Drive checkpoint matched member '{m}' (aliases {aliases})")
+    print("discovered checkpoints:", {k: v for k, v in found.items()})
+    return found
 
 
 def stage_repo():
@@ -211,16 +251,16 @@ def write_manifest(job, members, val_stats, train_seconds, status="done", extra=
 # ----------------------------------------------------------------- job handlers
 
 
-def handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt, MODELS_DIR):
-    """Bootstrap: OOF (+ test sub) for the existing champions from Drive checkpoints."""
+def handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt):
+    """Bootstrap: OOF (+ test sub) for the existing champions, auto-discovering their
+    checkpoints on Drive (no configured path needed)."""
     members, vstats = [], {}
     t0 = time.time()
+    ckpts = discover_checkpoints(job["members"])
     for name in job["members"]:
-        hits = glob.glob(os.path.join(MODELS_DIR, "**", "*.keras"), recursive=True)
-        hits = [h for h in hits if name in h.lower()]
-        if not hits:
+        if name not in ckpts:
             print("!! missing checkpoint for", name, "-> skip"); continue
-        net = tf.keras.models.load_model(hits[0], compile=False)
+        net = tf.keras.models.load_model(ckpts[name], compile=False)
         tta = "p4m" not in name        # p4m nets are D4-invariant -> TTA no-op
         pv = predict(net, Xv, tta); pt = predict(net, Xt, tta)
         emit_member(name, ids_v, yv, pv, ids_t, pt)
@@ -291,8 +331,7 @@ def fetch_queue():
 
 
 def main():
-    kaggle_auth(); stage_repo()
-    MODELS_DIR = drive_models_dir()
+    kaggle_auth(); stage_repo(); mount_drive()
     root = download_comp_data()
     cfg = base_cfg(root)
     print("decoding fixed val split + test set ...")
@@ -314,7 +353,7 @@ def main():
         print(f"\n=== running {job['jobid']} ({job.get('type')}/{job.get('arch')}) ===")
         try:
             if job.get("type") == "oof_dump":
-                handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt, MODELS_DIR)
+                handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") in ("TinyVGG", "MobileNetV3Small"):
                 handle_train_keras(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") == "p4m_tinyvgg":
