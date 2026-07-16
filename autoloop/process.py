@@ -146,7 +146,7 @@ def kaggle_submit(sub_path, message):
     return r.returncode == 0, (r.stdout + r.stderr)[-1200:]
 
 
-def kaggle_latest_score(message, timeout_s=600):
+def kaggle_latest_score(message, timeout_s=900):
     """Poll the submissions list for our message; return (public, private) once complete."""
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -154,7 +154,11 @@ def kaggle_latest_score(message, timeout_s=600):
         if r.returncode == 0 and r.stdout:
             import csv as _csv, io as _io
 
-            rows = list(_csv.DictReader(_io.StringIO(r.stdout)))
+            # The kaggle CLI prepends an "outdated version" warning to stdout; drop any
+            # lines before the real CSV header or DictReader mislabels every column.
+            lines = r.stdout.splitlines()
+            start = next((i for i, ln in enumerate(lines) if ln.startswith("fileName,")), 0)
+            rows = list(_csv.DictReader(_io.StringIO("\n".join(lines[start:]))))
             for row in rows:
                 desc = row.get("description") or row.get("Description") or ""
                 if message in desc:
