@@ -104,10 +104,17 @@ for m in MEMBERS:
 json.dump({"jobid": "p4moof", "status": "done", "priority": 0, "origin": "human",
            "type": "oof_dump", "members": kaggle_dumped, "val": vstats, "train_seconds": 0},
           open(f"{OUTDIR}/job_p4moof.json", "w"))
-json.dump({"title": "histopath-colab-out", "id": OUT_DS, "licenses": [{"name": "CC0-1.0"}]},
-          open(f"{OUTDIR}/dataset-metadata.json", "w"))
+# Cumulative push: merge with the existing dataset so we don't wipe job0/job1 artifacts.
 import subprocess
-r = subprocess.run(["kaggle", "datasets", "version", "-p", OUTDIR,
+MERGE = "/content/p4m_merge"
+shutil.rmtree(MERGE, ignore_errors=True); os.makedirs(MERGE, exist_ok=True)
+subprocess.run(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", MERGE, "--unzip", "--force"],
+               capture_output=True, text=True)
+for f in glob.glob(OUTDIR + "/*"):
+    shutil.copy(f, os.path.join(MERGE, os.path.basename(f)))     # new files win
+json.dump({"title": "histopath-colab-out", "id": OUT_DS, "licenses": [{"name": "CC0-1.0"}]},
+          open(f"{MERGE}/dataset-metadata.json", "w"))
+r = subprocess.run(["kaggle", "datasets", "version", "-p", MERGE,
                     "-m", "p4m OOF dump (legacy keras)", "--dir-mode", "zip"],
                    capture_output=True, text=True)
 print("push:", r.returncode, (r.stdout + r.stderr)[-300:])

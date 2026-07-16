@@ -69,7 +69,7 @@ def kaggle_auth():
 # Member -> substrings that identify its checkpoint folder/file on Drive.
 _CKPT_ALIASES = {
     "champion": ("champion", "mobilenetv3", "mnv3", "baseline"),
-    "tinyvgg": ("tinyvgg", "tiny_vgg"),
+    "tinyvgg": ("tinyvgg", "tiny_vgg", "vgg", "scratch_vgg", "exp_scratch_vgg"),
     "p4m_reg": ("p4m_reg", "p4mreg", "reg"),
     "p4m_dense": ("p4m_dense", "densenet", "dense"),
 }
@@ -222,10 +222,18 @@ def predict(net, X, tta):
 
 
 def push_out(msg):
-    """Version the colab-out dataset with everything currently staged in OUTDIR."""
+    """Version colab-out CUMULATIVELY: merge the current dataset with the new files in
+    OUTDIR so a job's push never wipes earlier jobs' artifacts (which would also make the
+    'already done?' check flap and re-run jobs). Two notebooks pushing at the same second
+    can still race, but runs here are human-paced."""
+    merge = "/content/out_merge"
+    shutil.rmtree(merge, ignore_errors=True); os.makedirs(merge, exist_ok=True)
+    sh(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", merge, "--unzip", "--force"])
+    for f in glob.glob(os.path.join(OUTDIR, "*")):
+        shutil.copy(f, os.path.join(merge, os.path.basename(f)))   # new files win
     meta = {"title": "histopath-colab-out", "id": OUT_DS, "licenses": [{"name": "CC0-1.0"}]}
-    json.dump(meta, open(os.path.join(OUTDIR, "dataset-metadata.json"), "w"))
-    r = sh(["kaggle", "datasets", "version", "-p", OUTDIR, "-m", msg, "--dir-mode", "zip"])
+    json.dump(meta, open(os.path.join(merge, "dataset-metadata.json"), "w"))
+    r = sh(["kaggle", "datasets", "version", "-p", merge, "-m", msg, "--dir-mode", "zip"])
     print("push_out:", r.returncode, (r.stdout + r.stderr)[-300:])
 
 
