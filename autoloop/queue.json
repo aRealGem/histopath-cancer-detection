@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "comp": "histopathologic-cancer-detection",
+    "val_split": "seed-1337 WSI-grouped GroupShuffleSplit (baseline.yaml val_fraction); identical for every member so OOF rows align",
+    "oof_schema": "id,label,pred",
+    "honesty_denylist": ["external_data", "test_pseudo_label", "post_2019_methods"],
+    "origin": "autonomous",
+    "notes": "Colab poll-loop consumes the first status=pending job by priority; writes oof_<member>.csv + sub_<member>.csv + job_<id>.json(status=done) back to jackiemartindale/histopath-colab-out."
+  },
+  "jobs": [
+    {
+      "jobid": "job0",
+      "priority": 0,
+      "status": "pending",
+      "type": "oof_dump",
+      "origin": "human",
+      "members": ["champion", "tinyvgg", "p4m_reg", "p4m_dense"],
+      "checkpoints": {
+        "champion": "drive:models/champion_mobilenetv3/best.keras",
+        "tinyvgg": "drive:models/tinyvgg/best.keras",
+        "p4m_reg": "drive:models/p4m_reg/best.keras",
+        "p4m_dense": "drive:models/p4m_dense/best.keras"
+      },
+      "emit_oof": true,
+      "notes": "BOOTSTRAP: inference-only. Dump OOF (id,label,pred=TTA) for the 4 existing champions on the fixed val split; copy their existing test submissions as sub_<member>.csv. p4m nets are D4-invariant so pred=no-TTA. If a Drive checkpoint is missing, retrain from repo (cheap on A100). This establishes the offline-proxy baseline that must reproduce the known ~0.9523 champion."
+    },
+    {
+      "jobid": "job1",
+      "priority": 1,
+      "status": "pending",
+      "type": "train",
+      "origin": "autonomous",
+      "arch": "TinyVGG",
+      "member_name": "tinyvgg_vl",
+      "hyperparams": {"monitor": "val_loss", "mode": "min", "epochs_cap": 30, "seed": 1337, "tta": true},
+      "emit_oof": true,
+      "notes": "Highest-EV rescue: re-checkpoint the TinyVGG mirage on val_LOSS (not val_auc). Emit OOF + TTA test submission. One variable vs the human TinyVGG member = the checkpoint monitor."
+    },
+    {
+      "jobid": "job2",
+      "priority": 2,
+      "status": "pending",
+      "type": "train",
+      "origin": "autonomous",
+      "arch": "p4m_tinyvgg",
+      "member_name": "p4m_reg_vl",
+      "hyperparams": {"monitor": "val_loss", "mode": "min", "epochs_cap": 6, "weight_decay": 1e-4, "seed": 1337, "tta": false},
+      "emit_oof": true,
+      "notes": "Re-confirm/strengthen p4m_reg with val_loss checkpointing (AdamW wd=1e-4, hard 6ep cap). D4-invariant -> no TTA."
+    },
+    {
+      "jobid": "job3",
+      "priority": 3,
+      "status": "pending",
+      "type": "train",
+      "origin": "autonomous",
+      "arch": "e2cnn_escnn",
+      "member_name": "e2cnn",
+      "hyperparams": {"monitor": "val_loss", "mode": "min", "epochs_cap": 20, "seed": 1337, "tta": false},
+      "emit_oof": true,
+      "notes": "Period-honest (2019) PyTorch equivariant member (QUVA-Lab e2cnn/escnn) — a genuinely new architecture family for decorrelation. Requires a PyTorch cell path in the Colab loop."
+    },
+    {
+      "jobid": "job4",
+      "priority": 4,
+      "status": "pending",
+      "type": "train",
+      "origin": "autonomous",
+      "arch": "TinyVGG",
+      "member_name": "macenko",
+      "hyperparams": {"monitor": "val_loss", "mode": "min", "epochs_cap": 30, "seed": 1337, "tta": true, "preproc": "macenko_stain_norm"},
+      "emit_oof": true,
+      "notes": "Macenko stain-normalized input -> decorrelated preprocessing member. Stain-norm at inference too."
+    },
+    {
+      "jobid": "job5",
+      "priority": 5,
+      "status": "pending",
+      "type": "features",
+      "origin": "autonomous",
+      "arch": "p4m_penultimate + logistic/SVM",
+      "member_name": "p4m_svm",
+      "hyperparams": {"seed": 1337},
+      "emit_oof": true,
+      "notes": "Cheap decorrelated member: fit logistic/linear-SVM on p4m penultimate features. Inference-only-ish; fast."
+    },
+    {
+      "jobid": "job6",
+      "priority": 6,
+      "status": "pending",
+      "type": "train",
+      "origin": "autonomous",
+      "arch": "p4m_tinyvgg",
+      "member_name": "p4m_seed7",
+      "hyperparams": {"monitor": "val_loss", "mode": "min", "epochs_cap": 6, "weight_decay": 1e-4, "seed": 7, "tta": false},
+      "emit_oof": true,
+      "notes": "p4m seed deep-ensemble diversity (different seed only)."
+    }
+  ]
+}
