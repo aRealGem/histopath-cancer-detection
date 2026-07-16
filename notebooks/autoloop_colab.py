@@ -324,10 +324,103 @@ def handle_train_keras(job, cfg, ids_v, yv, Xv, ids_t, Xt):
     print(f"  {name}: val AUROC {auroc(yv, pv):.6f} (monitor={monitor})")
 
 
+# ---- Macenko stain normalization (Macenko et al. 2009; period-authentic) ----
+_HEREF = np.array([[0.5626, 0.2159], [0.7201, 0.8012], [0.4062, 0.5581]])
+_MAXCREF = np.array([1.9705, 1.0308])
+
+
+def macenko_norm(I, Io=240, alpha=1, beta=0.15):
+    """Normalize an HxWx3 uint8 RGB patch to the reference H&E stain. Passthrough on
+    patches with too little tissue (mostly-background) to avoid unstable SVD."""
+    h, w, _ = I.shape
+    X = I.reshape(-1, 3).astype(np.float64)
+    OD = -np.log((X + 1.0) / Io)
+    ODhat = OD[~np.any(OD < beta, axis=1)]
+    if ODhat.shape[0] < 20:
+        return I.astype(np.uint8)
+    try:
+        _, V = np.linalg.eigh(np.cov(ODhat.T))
+        proj = ODhat.dot(V[:, 1:3])
+        phi = np.arctan2(proj[:, 1], proj[:, 0])
+        mn, mx = np.percentile(phi, alpha), np.percentile(phi, 100 - alpha)
+        vmin = V[:, 1:3].dot(np.array([np.cos(mn), np.sin(mn)]))
+        vmax = V[:, 1:3].dot(np.array([np.cos(mx), np.sin(mx)]))
+        HE = np.array([vmin, vmax]).T if vmin[0] > vmax[0] else np.array([vmax, vmin]).T
+        C = np.linalg.lstsq(HE, OD.T, rcond=None)[0]
+        maxC = np.array([np.percentile(C[0], 99), np.percentile(C[1], 99)])
+        maxC[maxC == 0] = 1.0
+        C = C / maxC[:, None] * _MAXCREF[:, None]
+        Inorm = Io * np.exp(-_HEREF.dot(C))
+        return np.clip(Inorm, 0, 255).T.reshape(h, w, 3).astype(np.uint8)
+    except np.linalg.LinAlgError:
+        return I.astype(np.uint8)
+
+
+def _macenko_batch(arr):
+    return np.stack([macenko_norm(a) for a in arr.numpy().astype(np.uint8)]).astype(np.uint8)
+
+
+def _macenko_datasets(cfg):
+    """Train/val tf.data with Macenko applied inside the decode (cached if cfg.data.cache)."""
+    from src import data as D
+    df = D.load_labels(cfg)
+    tr_df, va_df = D.split_train_val(cfg, df)
+    train_dir, _, _ = D._resolve(cfg)
+    size = cfg["data"]["image_size"]; ext = cfg["data"]["image_ext"]
+    bs = cfg["train"]["batch_size"]; cache = cfg["data"].get("cache", False)
+
+    def build(frame, training):
+        paths = [str(train_dir / f"{i}{ext}") for i in frame["id"]]
+        labels = frame["label"].astype("float32").tolist()
+
+        def read(path, y):
+            def _f(p):
+                return macenko_norm(D._decode_tif(p, size))
+            img = tf.py_function(_f, [path], tf.uint8); img.set_shape([size, size, 3])
+            return img, y
+        ds = tf.data.Dataset.from_tensor_slices((paths, labels))
+        ds = ds.map(read, num_parallel_calls=tf.data.AUTOTUNE)
+        if cache:
+            ds = ds.cache()
+        if training:
+            ds = ds.shuffle(min(len(paths), 20000), seed=cfg["seed"], reshuffle_each_iteration=True)
+        return ds.batch(bs).prefetch(tf.data.AUTOTUNE)
+    return build(tr_df, True), build(va_df, False)
+
+
+def handle_train_macenko(job, cfg, ids_v, yv, Xv, ids_t, Xt):
+    """Macenko-stain-normalized TinyVGG member (Keras 3). Decorrelated preprocessing:
+    normalize every patch to a reference H&E stain, then train from scratch on val_loss."""
+    import src.model as M
+    hp = job.get("hyperparams", {}); name = job["member_name"]
+    cfg = json.loads(json.dumps(cfg))
+    cfg["model"]["backbone"] = "TinyVGG"; cfg["model"]["from_scratch"] = True
+    monitor = "val_" + hp.get("monitor", "loss").replace("val_", ""); mode = hp.get("mode", "min")
+    t0 = time.time()
+    train_ds, val_ds = _macenko_datasets(cfg)
+    net = M.build_model(cfg); M.compile_model(net, cfg["train"].get("lr_head", 1e-3), cfg)
+    out_ckpt = f"/content/{name}.keras"
+    net.fit(train_ds, validation_data=val_ds, epochs=int(hp.get("epochs_cap", 30)),
+            callbacks=[keras.callbacks.ModelCheckpoint(out_ckpt, monitor=monitor, mode=mode,
+                                                       save_best_only=True, verbose=1),
+                       keras.callbacks.EarlyStopping(monitor=monitor, mode=mode, patience=8,
+                                                     restore_best_weights=True)], verbose=2)
+    net = tf.keras.models.load_model(out_ckpt, compile=False)
+    # Inference: Macenko-normalize the val + test arrays, then TTA-predict.
+    print("  macenko-normalizing val+test for inference ...")
+    Xvn = np.stack([macenko_norm(a) for a in Xv]); Xtn = np.stack([macenko_norm(a) for a in Xt])
+    tta = bool(hp.get("tta", True))
+    pv = predict(net, Xvn, tta); pt = predict(net, Xtn, tta)
+    emit_member(name, ids_v, yv, pv, ids_t, pt)
+    write_manifest(job, [name], {name: {"val_auroc": round(auroc(yv, pv), 6), "monitor": monitor,
+                   "preproc": "macenko"}}, time.time() - t0)
+    print(f"  {name}: val AUROC {auroc(yv, pv):.6f} (macenko, monitor={monitor})")
+
+
 def handle_needs_human(job):
-    """e2cnn/escnn, macenko, svm: arch-specific paths not yet wired -> flag for a human."""
+    """Arch paths not yet wired in THIS (Keras-3) loop -> flag for a human / legacy notebook."""
     write_manifest(job, [], {}, 0.0, status="needs_human",
-                   extra={"reason": f"handler for arch '{job.get('arch')}' not implemented"})
+                   extra={"reason": f"handler for arch '{job.get('arch')}' not implemented here"})
     print("  needs_human:", job["jobid"], job.get("arch"))
 
 
@@ -373,6 +466,9 @@ def main():
         try:
             if job.get("type") == "oof_dump":
                 handle_oof_dump(job, cfg, ids_v, yv, Xv, ids_t, Xt)
+            elif job.get("type") == "train" and \
+                    job.get("hyperparams", {}).get("preproc", "").startswith("macenko"):
+                handle_train_macenko(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") in ("TinyVGG", "MobileNetV3Small"):
                 handle_train_keras(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") == "p4m_tinyvgg":
