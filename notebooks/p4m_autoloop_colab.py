@@ -135,10 +135,14 @@ def download_comp_data():
 
 
 def discover_checkpoint(member):
-    """Auto-find a p4m member's best.keras on Drive (or $DRIVE_MODELS_DIR), preferring
-    paths containing 'histopath'. Returns a path or None."""
+    """Auto-find a p4m member's best.keras. Searches (1) THIS session's freshly-trained
+    checkpoints at /content/*.keras (the train handlers save there — so job5's SVM can
+    read features from a p4m the loop just trained, e.g. p4m_reg_vl, even when the old
+    p4m_reg isn't persisted on Drive), then (2) Drive / $DRIVE_MODELS_DIR. Prefers paths
+    containing 'histopath'. Returns a path or None. NOTE: /content is ephemeral — a runtime
+    restart wipes session checkpoints; persisting train outputs to Drive is a future harden."""
+    cands = glob.glob("/content/*.keras")                      # session-trained (top-level)
     roots = [os.environ.get("DRIVE_MODELS_DIR"), "/content/drive/MyDrive"]
-    cands = []
     for r in roots:
         if r and os.path.isdir(r):
             cands += glob.glob(os.path.join(r, "**", "*.keras"), recursive=True)
