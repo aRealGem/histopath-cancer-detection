@@ -433,6 +433,17 @@ def already_done(jobid):
     return os.path.exists(os.path.join(JOBSDIR, f"job_{jobid}.json"))
 
 
+def _p4m_owned(job):
+    """p4m-family jobs are handled by the SEPARATE legacy-Keras-2 loop
+    (notebooks/p4m_autoloop_colab.py). This Keras-3 loop must neither run them (it can't:
+    keras-gcnn needs Keras 2) NOR needs_human-flag them — a manifest here would make BOTH
+    loops' already_done() skip the job, blocking the p4m loop. So we drop them from selection
+    entirely and leave them pending for the p4m loop."""
+    arch = job.get("arch") or ""
+    return (job.get("type") == "train" and arch == "p4m_tinyvgg") \
+        or (job.get("type") == "features" and "p4m" in arch)
+
+
 def fetch_queue():
     shutil.rmtree(JOBSDIR, ignore_errors=True); os.makedirs(JOBSDIR, exist_ok=True)
     r = sh(["kaggle", "datasets", "download", "-d", JOBS_DS, "-p", JOBSDIR, "--unzip", "--force"])
@@ -456,7 +467,7 @@ def main():
         if not q:
             time.sleep(POLL_SECONDS); continue
         pending = [j for j in sorted(q["jobs"], key=lambda x: x.get("priority", 999))
-                   if j.get("status") == "pending"]
+                   if j.get("status") == "pending" and not _p4m_owned(j)]
         job = next((j for j in pending if not already_done(j["jobid"])), None)
         if not job:
             print("no runnable pending job; idle."); time.sleep(POLL_SECONDS); continue
@@ -471,11 +482,9 @@ def main():
                 handle_train_macenko(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") in ("TinyVGG", "MobileNetV3Small"):
                 handle_train_keras(job, cfg, ids_v, yv, Xv, ids_t, Xt)
-            elif job.get("type") == "train" and job.get("arch") == "p4m_tinyvgg":
-                # p4m path: build via keras_gcnn (see notebooks/p4m_tinyvgg_colab.py) with
-                # ModelCheckpoint(monitor='val_loss', mode='min'); D4-invariant so tta=False.
-                handle_needs_human(job)   # TODO: wire keras_gcnn builder into _fit_keras
             else:
+                # p4m-family jobs are already filtered out (_p4m_owned) and run in the legacy
+                # p4m loop; anything reaching here is a genuinely unhandled arch (e.g. e2cnn).
                 handle_needs_human(job)
             push_out(f"[autoloop] {job['jobid']} done")
         except Exception:
