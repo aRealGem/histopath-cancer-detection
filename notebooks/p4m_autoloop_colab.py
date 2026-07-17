@@ -118,15 +118,20 @@ def stage_repo():
 
 
 def download_comp_data():
+    """Return the dir holding train_labels.csv. First REUSE any copy already present
+    anywhere under /content (a p4m tab is often warm from an earlier p4m script) — the
+    same recursive-glob discovery the other p4m notebooks use; only download if absent."""
+    hits = glob.glob("/content/**/train_labels.csv", recursive=True)
+    if hits:
+        return os.path.dirname(hits[0])
     root = "/content/pcam"
-    if os.path.exists(os.path.join(root, "train_labels.csv")):
-        return root
     os.makedirs(root, exist_ok=True)
     sh(["kaggle", "competitions", "download", "-c", COMP, "-p", root])
     for z in glob.glob(os.path.join(root, "*.zip")):
         with zipfile.ZipFile(z) as zf:
             zf.extractall(root)
-    return root
+    hits = glob.glob("/content/**/train_labels.csv", recursive=True)
+    return os.path.dirname(hits[0]) if hits else root
 
 
 def discover_checkpoint(member):
