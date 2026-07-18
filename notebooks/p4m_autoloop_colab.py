@@ -329,6 +329,15 @@ def handle_train_p4m(job, cfg, ids_v, yv, Xv, ids_t, Xt):
         keras.callbacks.EarlyStopping(monitor=monitor, mode=mode, patience=8,
                                       restore_best_weights=True)])
     net = tf.keras.models.load_model(out_ckpt, compile=False, custom_objects=CUSTOM)
+    # Persist to Drive so downstream feature jobs (job5) can read this checkpoint even after
+    # a runtime restart wipes /content -- best-effort; /content still works within a session.
+    try:
+        ddir = "/content/drive/MyDrive/histopath_auto_ckpts"
+        os.makedirs(ddir, exist_ok=True)
+        shutil.copy(out_ckpt, os.path.join(ddir, f"{name}.keras"))
+        print(f"  persisted {name}.keras to Drive ({ddir})")
+    except Exception as e:
+        print(f"  (Drive persist skipped: {e})")
     pv = net.predict(Xv, verbose=0, batch_size=512).ravel()   # D4-invariant -> no TTA
     pt = net.predict(Xt, verbose=0, batch_size=512).ravel()
     emit_member(name, ids_v, yv, pv, ids_t, pt)
