@@ -232,13 +232,22 @@ def push_out(msg):
     push never wipes earlier jobs' artifacts. Mirrors autoloop_colab.push_out."""
     merge = "/content/p4m_out_merge"
     shutil.rmtree(merge, ignore_errors=True); os.makedirs(merge, exist_ok=True)
-    sh(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", merge, "--unzip", "--force"])
+    dl = sh(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", merge, "--unzip", "--force"])
+    # GUARD: if the merge-download failed or came back suspiciously empty (a mid-session
+    # auth hiccup did exactly this once and WIPED the bus), abort rather than push a
+    # non-cumulative version. The job stays un-acked (no manifest) -> re-pushes next cycle.
+    existing = [f for f in os.listdir(merge) if f != "dataset-metadata.json"]
+    if dl.returncode != 0 or len(existing) < 3:
+        print(f"push_out ABORT: colab-out download failed/empty (rc={dl.returncode}, "
+              f"{len(existing)} files) -> refusing to push a wipe; retry next cycle.")
+        return False
     for f in glob.glob(os.path.join(OUTDIR, "*")):
         shutil.copy(f, os.path.join(merge, os.path.basename(f)))   # new files win
     json.dump({"title": "histopath-colab-out", "id": OUT_DS, "licenses": [{"name": "CC0-1.0"}]},
               open(os.path.join(merge, "dataset-metadata.json"), "w"))
     r = sh(["kaggle", "datasets", "version", "-p", merge, "-m", msg, "--dir-mode", "zip"])
     print("push_out:", r.returncode, (r.stdout + r.stderr)[-300:])
+    return r.returncode == 0
 
 
 # ----------------------------------------------------------------- p4m model
