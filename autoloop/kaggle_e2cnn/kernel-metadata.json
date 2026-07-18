@@ -7,8 +7,8 @@
   "is_private": true,
   "enable_gpu": true,
   "enable_tpu": false,
-  "enable_internet": true,
-  "dataset_sources": [],
+  "enable_internet": false,
+  "dataset_sources": ["jackiemartindale/histopath-baseline-code", "jackiemartindale/escnn-offline-wheels"],
   "competition_sources": ["histopathologic-cancer-detection"],
   "kernel_sources": [],
   "model_sources": []

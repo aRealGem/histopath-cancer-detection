@@ -19,12 +19,18 @@
 # D4-equivariant + GroupPooling => D4-INVARIANT => no TTA (a no-op, as for p4m).
 # val_loss checkpointing (the project's overfit signal); AdamW wd=1e-4 (p4m_reg).
 #
-# kernel-metadata.json: kernel_type=script, enable_gpu=true, enable_internet=true,
-# competition_sources=["histopathologic-cancer-detection"].
+# FULLY OFFLINE: a competition-attached kernel has the network forced OFF by Kaggle
+# (anti-leakage) regardless of enable_internet, so there is NO git/pip from the net.
+# Code (src.data + WSI split map) is staged from the histopath-baseline-code dataset;
+# escnn is pip-installed --no-index from the escnn-offline-wheels dataset.
+# kernel-metadata.json: script, enable_gpu=true, enable_internet=false,
+# competition_sources=["histopathologic-cancer-detection"],
+# dataset_sources=["jackiemartindale/histopath-baseline-code",
+#                  "jackiemartindale/escnn-offline-wheels"].
 # =============================================================================
-import os, sys, glob, json, time, subprocess
+import os, sys, glob, json, time, shutil, gzip, zipfile, subprocess
 
-REPO_URL = "https://github.com/aRealGem/histopath-cancer-detection"
+WHEELS = "/kaggle/input/escnn-offline-wheels"
 WORK = "/kaggle/working/repo"
 OUT = "/kaggle/working"
 SEED = 1337
@@ -42,17 +48,44 @@ def sh(cmd, check=True):
     return r.returncode
 
 
-# --- code: clone main (carries src.data + the committed WSI split map) ---
+# --- code: stage src.data (+ WSI split map) from the histopath-baseline-code dataset
+#     (offline; the comp-attached kernel has no network) — mirrors the proven pattern ---
 if not os.path.exists(os.path.join(WORK, "src", "data.py")):
-    sh(f"git clone --depth 1 {REPO_URL} {WORK}")
+    os.makedirs(WORK, exist_ok=True)
+    czip = glob.glob("/kaggle/input/**/code.zip", recursive=True)
+    extracted = glob.glob("/kaggle/input/**/src/data.py", recursive=True)
+    if czip:
+        with zipfile.ZipFile(czip[0]) as z:
+            z.extractall(WORK)
+        print("staged code from", czip[0])
+    elif extracted:
+        rootc = os.path.dirname(os.path.dirname(extracted[0]))
+        shutil.copytree(rootc, WORK, dirs_exist_ok=True)
+        print("staged code from", rootc)
+    else:
+        raise SystemExit("no code (code.zip or src/data.py) under /kaggle/input — attach histopath-baseline-code")
 os.chdir(WORK)
 sys.path.insert(0, WORK)
 
-# --- deps: escnn (torch is preinstalled on the Kaggle GPU image) ---
+# WSI split map (src.data needs data/wsi/patch_id_wsi_full.csv.gz)
+if not os.path.exists("data/wsi/patch_id_wsi_full.csv.gz"):
+    os.makedirs("data/wsi", exist_ok=True)
+    gz = glob.glob("/kaggle/input/**/patch_id_wsi_full.csv.gz", recursive=True)
+    csvh = [h for h in glob.glob("/kaggle/input/**/*wsi*full*.csv", recursive=True) if os.path.isfile(h)]
+    if gz:
+        shutil.copy(gz[0], "data/wsi/patch_id_wsi_full.csv.gz"); print("WSI map (gz) from", gz[0])
+    elif csvh:
+        with open(csvh[0], "rb") as fi, gzip.open("data/wsi/patch_id_wsi_full.csv.gz", "wb") as fo:
+            shutil.copyfileobj(fi, fo)
+        print("WSI map from", csvh[0])
+    else:
+        raise SystemExit("no WSI split map under /kaggle/input")
+
+# --- deps: escnn from the offline wheel bundle (torch/numpy/scipy preinstalled on Kaggle) ---
 try:
     import escnn  # noqa: F401
 except Exception:
-    sh(f"{sys.executable} -m pip install -q escnn")
+    sh(f"{sys.executable} -m pip install --no-index --find-links {WHEELS} escnn")
 
 import numpy as np
 import yaml
