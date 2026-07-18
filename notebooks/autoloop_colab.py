@@ -132,6 +132,9 @@ def download_comp_data():
 
 import numpy as np
 import yaml
+# Let TF grow GPU memory instead of grabbing the whole A100 up front, so the PyTorch
+# e2cnn member (job3) can share the device in this same runtime. Harmless for the Keras jobs.
+os.environ.setdefault("TF_FORCE_GPU_ALLOW_GROWTH", "true")
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -426,6 +429,183 @@ def handle_train_macenko(job, cfg, ids_v, yv, Xv, ids_t, Xt):
     print(f"  {name}: val AUROC {auroc(yv, pv):.6f} (macenko, monitor={monitor})")
 
 
+def _p4m_family_done():
+    """Single-A100 discipline (CW-27: this account gets ~1 GPU at a time). The e2cnn GPU
+    job (job3) must NOT train concurrently with the p4m family (job2/job5/job6) or one
+    workload silently falls to CPU. Return True only once all three p4m manifests report
+    status=='done' on the bus -> then job3 runs SEQUENTIALLY on the freed A100."""
+    d = "/content/e2cnn_busmani"
+    shutil.rmtree(d, ignore_errors=True); os.makedirs(d, exist_ok=True)
+    sh(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", d, "--unzip", "--force"])
+
+    def _st(j):
+        p = os.path.join(d, f"job_{j}.json")
+        if not os.path.exists(p):
+            return None
+        try:
+            return json.load(open(p)).get("status")
+        except (json.JSONDecodeError, OSError):
+            return None
+    return all(_st(j) == "done" for j in ("job2", "job5", "job6"))
+
+
+def handle_train_e2cnn(job, cfg, ids_v, yv, Xv, ids_t, Xt):
+    """job3: D4-steerable CNN (escnn / QUVA-Lab e2cnn) — a genuinely-new PyTorch
+    group-equivariant architecture family, the strongest remaining DECORRELATION candidate.
+    Uses the SAME seed-1337 val split (Xv/yv/ids_v) + test set (Xt/ids_t) as every other
+    member so OOF rows stay row-aligned. D4-equivariant + GroupPooling => D4-INVARIANT =>
+    no TTA (a no-op, same as p4m). val_LOSS checkpointing (the project's hard-won overfit
+    signal); AdamW wd=1e-4 (the winning p4m_reg recipe). UNTESTED live (no local escnn) ->
+    first run should be supervised."""
+    hp = job.get("hyperparams", {})
+    name = job["member_name"]
+    seed = int(hp.get("seed", SEED))
+    epochs = int(hp.get("epochs_cap", 20))
+
+    # torch ships on Colab; escnn does not.
+    try:
+        import torch
+    except Exception:
+        sh([sys.executable, "-m", "pip", "install", "-q", "torch"]); import torch
+    # escnn 0.1.9 uses np.float/np.int (removed in numpy>=1.24) when building group
+    # representations -> restore the deprecated aliases before importing/using escnn.
+    for _a, _t in (("float", float), ("int", int), ("bool", bool), ("object", object),
+                   ("complex", complex), ("str", str)):
+        if not hasattr(np, _a):
+            setattr(np, _a, _t)
+    try:
+        from escnn import gspaces, nn as enn
+    except Exception:
+        print("  installing escnn ..."); sh([sys.executable, "-m", "pip", "install", "-q", "escnn"])
+        from escnn import gspaces, nn as enn
+    import torch.nn as tnn
+    from torch.utils.data import Dataset, DataLoader
+    from pathlib import Path
+    from PIL import Image
+    from src import data as D
+
+    torch.manual_seed(seed); np.random.seed(seed)
+    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    if dev != "cuda":
+        print("  WARNING: no CUDA visible -> e2cnn on CPU is very slow. It is meant to run "
+              "sequentially on the A100 AFTER the p4m family drains.")
+
+    class E2Net(tnn.Module):
+        """Compact D4 (flip+rot4) steerable net, made tractable at 96x96 by pooling stride-2
+        every block. regular_repr (|D4|=8) fields; GroupPooling -> D4-invariant features."""
+        def __init__(self):
+            super().__init__()
+            self.gs = gspaces.flipRot2dOnR2(N=4)
+            self.itype = enn.FieldType(self.gs, 3 * [self.gs.trivial_repr])
+
+            def block(cin, nf):
+                cout = enn.FieldType(self.gs, nf * [self.gs.regular_repr])
+                return enn.SequentialModule(
+                    enn.R2Conv(cin, cout, kernel_size=3, padding=1, bias=False),
+                    enn.InnerBatchNorm(cout),
+                    enn.ReLU(cout, inplace=True),
+                    enn.PointwiseAvgPoolAntialiased(cout, sigma=0.66, stride=2),
+                ), cout
+            self.b1, c1 = block(self.itype, 8)      # 96 -> 48
+            self.b2, c2 = block(c1, 16)             # 48 -> 24
+            self.b3, c3 = block(c2, 32)             # 24 -> 12
+            self.b4, c4 = block(c3, 48)             # 12 -> 6
+            self.gpool = enn.GroupPooling(c4)
+            cfeat = self.gpool.out_type.size
+            self.head = tnn.Sequential(
+                tnn.AdaptiveAvgPool2d(1), tnn.Flatten(),
+                tnn.Linear(cfeat, 64), tnn.ReLU(inplace=True),
+                tnn.Dropout(0.3), tnn.Linear(64, 1))
+
+        def forward(self, x):
+            x = enn.GeometricTensor(x, self.itype)
+            x = self.b1(x); x = self.b2(x); x = self.b3(x); x = self.b4(x)
+            return self.head(self.gpool(x).tensor).squeeze(1)
+
+    net = E2Net().to(dev)
+
+    # --- train data: stream tif files (too many to hold in RAM); NO geometric aug (D4 handles it) ---
+    df = D.load_labels(cfg)
+    tr_df, _ = D.split_train_val(cfg, df); tr_df = tr_df.reset_index(drop=True)
+    root = Path(cfg["data"]["root"]); tdir = root / cfg["data"]["train_dir"]
+    ext = cfg["data"]["image_ext"]; size = int(cfg["data"]["image_size"])
+
+    class TifDS(Dataset):
+        def __init__(self, ids, labels):
+            self.ids = list(ids); self.labels = np.asarray(labels, dtype=np.float32)
+
+        def __len__(self):
+            return len(self.ids)
+
+        def __getitem__(self, i):
+            im = Image.open(str(tdir / f"{self.ids[i]}{ext}")).convert("RGB").resize((size, size))
+            x = np.asarray(im, dtype=np.float32).transpose(2, 0, 1) / 255.0
+            return torch.from_numpy(x), self.labels[i]
+
+    tr_loader = DataLoader(TifDS(tr_df["id"], tr_df["label"]), batch_size=128, shuffle=True,
+                           num_workers=2, pin_memory=(dev == "cuda"), drop_last=True)
+
+    # val/test: reuse the already-decoded shared arrays (NHWC 0-255) -> NCHW /255 tensors
+    def _to_tensor(X):
+        return torch.from_numpy(np.asarray(X, dtype=np.float32).transpose(0, 3, 1, 2) / 255.0)
+    Xv_t = _to_tensor(Xv); Xt_t = _to_tensor(Xt)
+    yv_t = torch.from_numpy(np.asarray(yv, dtype=np.float32))
+
+    opt = torch.optim.AdamW(net.parameters(), lr=1e-3, weight_decay=1e-4)
+    lossf = tnn.BCEWithLogitsLoss()
+    ck = f"/content/{name}.pt"
+    best_vl = float("inf"); best_state = None; patience = 8; bad = 0
+    t0 = time.time()
+
+    def _val_loss_probs():
+        net.eval(); tot = 0.0; probs = []
+        with torch.no_grad():
+            for i in range(0, len(Xv_t), 512):
+                xb = Xv_t[i:i + 512].to(dev); yb = yv_t[i:i + 512].to(dev)
+                lg = net(xb); tot += lossf(lg, yb).item() * len(xb)
+                probs.append(torch.sigmoid(lg).cpu().numpy())
+        return tot / len(Xv_t), np.concatenate(probs)
+
+    for ep in range(epochs):
+        net.train()
+        for xb, yb in tr_loader:
+            xb = xb.to(dev); yb = yb.to(dev)
+            opt.zero_grad(); lossf(net(xb), yb).backward(); opt.step()
+        vl, pv = _val_loss_probs()
+        print(f"  ep{ep + 1}/{epochs} val_loss={vl:.4f} val_auroc={auroc(yv, pv):.4f}")
+        if vl < best_vl - 1e-5:
+            best_vl = vl; bad = 0
+            best_state = {k: v.detach().cpu().clone() for k, v in net.state_dict().items()}
+            torch.save(best_state, ck)
+        else:
+            bad += 1
+            if bad >= patience:
+                print("  early stop (val_loss)"); break
+
+    if best_state is not None:
+        net.load_state_dict(best_state)
+
+    def _predict(X_t):
+        net.eval(); out = []
+        with torch.no_grad():
+            for i in range(0, len(X_t), 512):
+                out.append(torch.sigmoid(net(X_t[i:i + 512].to(dev))).cpu().numpy())
+        return np.concatenate(out)
+    pv = _predict(Xv_t); pt = _predict(Xt_t)          # D4-invariant -> no TTA
+    emit_member(name, ids_v, yv, pv, ids_t, pt)
+    # persist checkpoint to Drive so a runtime restart doesn't lose it (matches the p4m fix)
+    try:
+        ddir = "/content/drive/MyDrive/histopath_auto_ckpts"; os.makedirs(ddir, exist_ok=True)
+        shutil.copy(ck, os.path.join(ddir, f"{name}.pt"))
+        print(f"  persisted {name}.pt to Drive")
+    except Exception as e:
+        print(f"  (Drive persist skipped: {e})")
+    write_manifest(job, [name], {name: {"val_auroc": round(auroc(yv, pv), 6),
+                   "val_loss": round(best_vl, 6), "monitor": "val_loss", "seed": seed}},
+                   time.time() - t0)
+    print(f"  {name}: val AUROC {auroc(yv, pv):.6f} (D4-steerable escnn, seed={seed})")
+
+
 def handle_needs_human(job):
     """Arch paths not yet wired in THIS (Keras-3) loop -> flag for a human / legacy notebook."""
     write_manifest(job, [], {}, 0.0, status="needs_human",
@@ -437,9 +617,17 @@ def handle_needs_human(job):
 
 
 def already_done(jobid):
-    """Skip if this job's manifest already exists in colab-out (idempotent resume)."""
+    """Skip only if this job's manifest exists AND says status=='done' (idempotent resume).
+    A stale needs_human/error manifest (e.g. job3 flagged before its e2cnn handler was
+    wired) must NOT block a real run -> mirrors the p4m loop's status-aware check."""
     sh(["kaggle", "datasets", "download", "-d", OUT_DS, "-p", JOBSDIR, "--unzip", "--force"])
-    return os.path.exists(os.path.join(JOBSDIR, f"job_{jobid}.json"))
+    p = os.path.join(JOBSDIR, f"job_{jobid}.json")
+    if not os.path.exists(p):
+        return False
+    try:
+        return json.load(open(p)).get("status") == "done"
+    except (json.JSONDecodeError, OSError):
+        return False
 
 
 def _p4m_owned(job):
@@ -478,6 +666,13 @@ def main():
         pending = [j for j in sorted(q["jobs"], key=lambda x: x.get("priority", 999))
                    if j.get("status") == "pending" and not _p4m_owned(j)]
         job = next((j for j in pending if not already_done(j["jobid"])), None)
+        # single-A100 discipline: hold the e2cnn GPU job until the p4m family (job2/5/6)
+        # drains so the two GPU workloads run SEQUENTIALLY, but let any OTHER runnable job
+        # proceed meanwhile. (_p4m_family_done() only runs when e2cnn is actually up next.)
+        if job and job.get("arch") == "e2cnn_escnn" and not _p4m_family_done():
+            print("  deferring job3/e2cnn until p4m family (job2/5/6) done (sequential A100).")
+            job = next((j for j in pending if j.get("arch") != "e2cnn_escnn"
+                        and not already_done(j["jobid"])), None)
         if not job:
             print("no runnable pending job; idle."); time.sleep(POLL_SECONDS); continue
 
@@ -491,9 +686,11 @@ def main():
                 handle_train_macenko(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             elif job.get("type") == "train" and job.get("arch") in ("TinyVGG", "MobileNetV3Small"):
                 handle_train_keras(job, cfg, ids_v, yv, Xv, ids_t, Xt)
+            elif job.get("arch") == "e2cnn_escnn":
+                handle_train_e2cnn(job, cfg, ids_v, yv, Xv, ids_t, Xt)
             else:
                 # p4m-family jobs are already filtered out (_p4m_owned) and run in the legacy
-                # p4m loop; anything reaching here is a genuinely unhandled arch (e.g. e2cnn).
+                # p4m loop; anything reaching here is a genuinely unhandled arch.
                 handle_needs_human(job)
             push_out(f"[autoloop] {job['jobid']} done")
         except Exception:
