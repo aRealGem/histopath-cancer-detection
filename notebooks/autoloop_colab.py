@@ -467,6 +467,12 @@ def handle_train_e2cnn(job, cfg, ids_v, yv, Xv, ids_t, Xt):
         import torch
     except Exception:
         sh([sys.executable, "-m", "pip", "install", "-q", "torch"]); import torch
+    # escnn 0.1.9 uses np.float/np.int (removed in numpy>=1.24) when building group
+    # representations -> restore the deprecated aliases before importing/using escnn.
+    for _a, _t in (("float", float), ("int", int), ("bool", bool), ("object", object),
+                   ("complex", complex), ("str", str)):
+        if not hasattr(np, _a):
+            setattr(np, _a, _t)
     try:
         from escnn import gspaces, nn as enn
     except Exception:

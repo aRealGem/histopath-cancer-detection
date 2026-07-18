@@ -88,6 +88,12 @@ except Exception:
     sh(f"{sys.executable} -m pip install --no-index --find-links {WHEELS} escnn")
 
 import numpy as np
+# escnn 0.1.9 still uses np.float/np.int (removed in numpy>=1.24) when building group
+# representations -> restore the deprecated aliases before importing/using escnn.
+for _a, _t in (("float", float), ("int", int), ("bool", bool), ("object", object),
+               ("complex", complex), ("str", str)):
+    if not hasattr(np, _a):
+        setattr(np, _a, _t)
 import yaml
 import torch
 import torch.nn as tnn
