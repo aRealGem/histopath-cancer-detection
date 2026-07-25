@@ -5,3 +5,7 @@ jobs_ds/
 state.json
 events.jsonl
 *.tmp
+
+# large, regenerable blend/submission snapshots + state backups (kept on disk, not versioned)
+auto_*.csv
+*.bak*
