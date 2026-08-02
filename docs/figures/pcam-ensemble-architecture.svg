@@ -1,0 +1,297 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" font-family="'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <style>
+      text{font-family:'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;}
+      .mono{font-family:ui-monospace,'SF Mono','Cascadia Code',Menlo,Consolas,'Liberation Mono',monospace;}
+      .eyebrow{font-weight:700;letter-spacing:1.6px;}
+    </style>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#12212E" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrInk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#2A4A63"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1000" fill="#F1F3F4"/>
+
+  <!-- HEADER -->
+  <text x="60" y="52" font-size="31" font-weight="800" fill="#14232F">The final ensemble, precisely</text>
+  <text x="60" y="80" font-size="14.5" fill="#3A4956">Nine members across four architecture families. The champion is a weighted arithmetic mean of the members&#8217; test probabilities, weights renormalized to sum to 1.</text>
+  <text x="60" y="105" class="mono" font-size="10.5" fill="#6A7580">INPUT 96&#215;96&#215;3 H&amp;E patch, raw [0,255]   &#183;   OUTPUT one tumour probability   &#183;   METRIC AUROC   &#183;   public 0.9660 / private 0.9587   &#183;   SOURCE research:histopath_pcam, appendix</text>
+  <rect x="60" y="118" width="1480" height="1" fill="#D8DEE1"/>
+  <rect x="60" y="117" width="104" height="3" rx="1.5" fill="#0E8C82"/>
+
+  <!-- INPUT NODE -->
+  <rect x="60" y="146" width="260" height="92" rx="12" fill="#FFFFFF" stroke="#1E3D5C" stroke-width="2"/>
+  <text x="78" y="170" class="eyebrow" font-size="9.5" fill="#1E3D5C">INPUT</text>
+  <text x="78" y="194" class="mono" font-size="17" font-weight="700" fill="#14232F">96 &#215; 96 &#215; 3</text>
+  <text x="78" y="212" font-size="10.5" fill="#5E6B75">H&amp;E patch, raw uint8 [0,255]</text>
+  <text x="78" y="228" font-size="10.5" fill="#5E6B75">normalized exactly once, in-backbone</text>
+
+  <!-- ADMISSION PANEL -->
+  <rect x="60" y="258" width="260" height="214" rx="12" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="80" y="282" class="eyebrow" font-size="9.5" fill="#6E5AA8">HOW A MEMBER GOT IN</text>
+  <text x="80" y="304" font-size="11" font-weight="700" fill="#14232F">1 &#183; Decorrelation gate</text>
+  <text x="80" y="320" font-size="10" fill="#6A7580"><tspan x="80">test-prediction rank-correlation</tspan><tspan x="80" dy="13">&#8804; 0.90 against every existing member</tspan></text>
+  <text x="80" y="358" font-size="11" font-weight="700" fill="#14232F">2 &#183; Standalone strength</text>
+  <text x="80" y="374" font-size="10" fill="#6A7580"><tspan x="80">necessary too: decorrelated-but-weak</tspan><tspan x="80" dy="13">candidates dragged the blend and were cut</tspan></text>
+  <text x="80" y="412" font-size="11" font-weight="700" fill="#14232F">3 &#183; Private LB arbitrates</text>
+  <text x="80" y="428" font-size="10" fill="#6A7580"><tspan x="80">promotion decided only by the hidden set;</tspan><tspan x="80" dy="13">agent-chosen members carry the stamp</tspan></text>
+  <text x="80" y="458" class="mono" font-size="10" fill="#4E3D7D">origin=autonomous</text>
+
+  <!-- BUDGET PANEL -->
+  <rect x="60" y="492" width="260" height="216" rx="12" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="80" y="516" class="eyebrow" font-size="9.5" fill="#0E8C82">BLEND BUDGET BY FAMILY</text>
+  <text x="80" y="540" font-size="10.5" fill="#3A4956">pretrained CNN</text>
+  <rect x="80" y="546" width="32" height="14" rx="3" fill="#1E3D5C"/>
+  <text x="300" y="557" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#1E3D5C">0.12</text>
+  <text x="80" y="586" font-size="10.5" fill="#3A4956">from-scratch CNN</text>
+  <rect x="80" y="592" width="32" height="14" rx="3" fill="#E0912F"/>
+  <text x="300" y="603" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#A85E12">0.12</text>
+  <text x="80" y="632" font-size="10.5" fill="#3A4956">p4m group-equivariant</text>
+  <rect x="80" y="638" width="150" height="14" rx="3" fill="#0E8C82"/>
+  <text x="300" y="649" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#0E8C82">0.56</text>
+  <text x="80" y="678" font-size="10.5" fill="#3A4956">steerable e2cnn</text>
+  <rect x="80" y="684" width="54" height="14" rx="3" fill="#6E5AA8"/>
+  <text x="300" y="695" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#4E3D7D">0.20</text>
+
+  <!-- SEED NOTE -->
+  <rect x="60" y="728" width="260" height="128" rx="12" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="80" y="752" class="eyebrow" font-size="9.5" fill="#6A7580">TWO THINGS TO NOTICE</text>
+  <text x="80" y="774" font-size="10.5" fill="#3A4956"><tspan x="80">Members 3&#8211;5 and 7&#8211;9 are <tspan font-weight="700">seed averages</tspan></tspan><tspan x="80" dy="14">inside their family budget: variance</tspan><tspan x="80" dy="14">reduction, not new capability.</tspan></text>
+  <text x="80" y="830" font-size="10.5" fill="#3A4956"><tspan x="80">Only members 1&#8211;2 use <tspan font-weight="700">TTA</tspan>. Members 3&#8211;9</tspan><tspan x="80" dy="14">are D4-invariant by construction, so</tspan><tspan x="80" dy="14">averaging flipped views adds nothing.</tspan></text>
+
+  <!-- INPUT BUS -->
+  <path d="M320,192 L336,192 L336,199" fill="none" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="336" y1="199" x2="336" y2="861" stroke="#2A4A63" stroke-width="2"/>
+
+  <!-- FAMILY A header -->
+  <rect x="350" y="146" width="810" height="1" fill="#1E3D5C"/>
+  <text x="350" y="163" class="eyebrow" font-size="9.5" fill="#1E3D5C">PRETRAINED CNN &#183; &#931; 0.12</text>
+  <text x="1160" y="163" text-anchor="end" font-size="9.5" fill="#93A0A8">the honest baseline the whole campaign is measured against</text>
+  <!-- member 1 -->
+  <line x1="336" y1="199" x2="350" y2="199" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="168" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="168" width="5" height="62" rx="2.5" fill="#1E3D5C"/>
+  <circle cx="381" cy="199" r="13" fill="#1E3D5C"/>
+  <text x="381" y="204" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">1</text>
+  <text x="404" y="195" class="mono" font-size="12.5" font-weight="700" fill="#14232F">champion</text>
+  <rect x="404" y="203" width="42" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="425" y="214" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val</text>
+  <text x="512" y="194" font-size="10.5" fill="#3A4956">MobileNetV3-Small, ImageNet-pretrained</text>
+  <text x="512" y="210" font-size="10.5" fill="#6A7580">frozen backbone + dense head</text>
+  <rect x="944" y="189" width="126" height="20" rx="10" fill="#EAF0F4"/>
+  <text x="1007" y="203" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1E3D5C">8-view TTA</text>
+  <text x="1148" y="196" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#1E3D5C">0.120</text>
+  <rect x="1078" y="206" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="206" width="35" height="8" rx="4" fill="#1E3D5C"/>
+
+  <!-- FAMILY B header -->
+  <rect x="350" y="250" width="810" height="1" fill="#E0912F"/>
+  <text x="350" y="267" class="eyebrow" font-size="9.5" fill="#A85E12">FROM-SCRATCH CNN &#183; &#931; 0.12</text>
+  <text x="1160" y="267" text-anchor="end" font-size="9.5" fill="#93A0A8">the mirage lineage: weakest solo, best teammate</text>
+  <!-- member 2 -->
+  <line x1="336" y1="303" x2="350" y2="303" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="272" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="272" width="5" height="62" rx="2.5" fill="#E0912F"/>
+  <circle cx="381" cy="303" r="13" fill="#E0912F"/>
+  <text x="381" y="308" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">2</text>
+  <text x="404" y="299" class="mono" font-size="12.5" font-weight="700" fill="#14232F">tinyvgg</text>
+  <rect x="404" y="307" width="42" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="425" y="318" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val</text>
+  <text x="512" y="298" font-size="10.5" fill="#3A4956">lean VGG trained from random init, widths 24 / 48 / 96</text>
+  <text x="512" y="314" font-size="10.5" fill="#6A7580">~250K params &#8212; small capacity mirages less and diversifies more</text>
+  <rect x="944" y="293" width="126" height="20" rx="10" fill="#FAF0E2"/>
+  <text x="1007" y="307" text-anchor="middle" font-size="9.5" font-weight="700" fill="#A85E12">8-view TTA</text>
+  <text x="1148" y="300" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#A85E12">0.120</text>
+  <rect x="1078" y="310" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="310" width="35" height="8" rx="4" fill="#E0912F"/>
+
+  <!-- FAMILY C header -->
+  <rect x="350" y="354" width="810" height="1" fill="#0E8C82"/>
+  <text x="350" y="371" class="eyebrow" font-size="9.5" fill="#0E8C82">p4m GROUP-EQUIVARIANT (keras-gcnn) &#183; &#931; 0.56</text>
+  <text x="1160" y="371" text-anchor="end" font-size="9.5" fill="#93A0A8">members 3&#8211;5 are one recipe at three seeds, &#931; 0.32</text>
+
+  <!-- member 3 -->
+  <line x1="336" y1="407" x2="350" y2="407" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="376" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="376" width="5" height="62" rx="2.5" fill="#0E8C82"/>
+  <circle cx="381" cy="407" r="13" fill="#0E8C82"/>
+  <text x="381" y="412" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">3</text>
+  <text x="404" y="403" class="mono" font-size="12.5" font-weight="700" fill="#14232F">p4m_reg</text>
+  <rect x="404" y="411" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="422" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="402" font-size="10.5" fill="#3A4956">p4m-TinyVGG: lift Z2 &#8594; D4, widths 8 / 16 / 32 &#215; 8-group</text>
+  <text x="512" y="418" font-size="10.5" fill="#6A7580">GroupPool head; weight decay + hard short epoch cap</text>
+  <rect x="944" y="397" width="126" height="20" rx="10" fill="#E4F1EF"/>
+  <text x="1007" y="411" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0E8C82">D4-invariant</text>
+  <text x="1148" y="404" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#0E8C82">0.1066</text>
+  <rect x="1078" y="414" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="414" width="31" height="8" rx="4" fill="#0E8C82"/>
+
+  <!-- member 4 -->
+  <line x1="336" y1="477" x2="350" y2="477" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="446" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="446" width="5" height="62" rx="2.5" fill="#0E8C82"/>
+  <circle cx="381" cy="477" r="13" fill="#0E8C82"/>
+  <text x="381" y="482" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">4</text>
+  <text x="404" y="473" class="mono" font-size="12.5" font-weight="700" fill="#14232F">p4m_reg_vl</text>
+  <rect x="404" y="481" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="492" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="472" font-size="10.5" fill="#3A4956">same recipe, seed-varied weight init</text>
+  <text x="512" y="488" font-size="10.5" fill="#6A7580">agent-promoted &#8212; private 0.9546</text>
+  <rect x="944" y="467" width="126" height="20" rx="10" fill="#E4F1EF"/>
+  <text x="1007" y="481" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0E8C82">D4-invariant</text>
+  <text x="1148" y="474" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#0E8C82">0.1066</text>
+  <rect x="1078" y="484" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="484" width="31" height="8" rx="4" fill="#0E8C82"/>
+  <circle cx="1163" cy="477" r="4" fill="#6E5AA8"/>
+
+  <!-- member 5 -->
+  <line x1="336" y1="547" x2="350" y2="547" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="516" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="516" width="5" height="62" rx="2.5" fill="#0E8C82"/>
+  <circle cx="381" cy="547" r="13" fill="#0E8C82"/>
+  <text x="381" y="552" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">5</text>
+  <text x="404" y="543" class="mono" font-size="12.5" font-weight="700" fill="#14232F">p4m_seed7</text>
+  <rect x="404" y="551" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="562" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="542" font-size="10.5" fill="#3A4956">same recipe, 3rd seed</text>
+  <text x="512" y="558" font-size="10.5" fill="#6A7580">agent-promoted &#8212; private 0.9559</text>
+  <rect x="944" y="537" width="126" height="20" rx="10" fill="#E4F1EF"/>
+  <text x="1007" y="551" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0E8C82">D4-invariant</text>
+  <text x="1148" y="544" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#0E8C82">0.1066</text>
+  <rect x="1078" y="554" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="554" width="31" height="8" rx="4" fill="#0E8C82"/>
+  <circle cx="1163" cy="547" r="4" fill="#6E5AA8"/>
+
+  <!-- member 6 -->
+  <line x1="336" y1="617" x2="350" y2="617" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="586" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="586" width="5" height="62" rx="2.5" fill="#0E8C82"/>
+  <circle cx="381" cy="617" r="13" fill="#0E8C82"/>
+  <text x="381" y="622" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">6</text>
+  <text x="404" y="613" class="mono" font-size="12.5" font-weight="700" fill="#14232F">p4m_dense</text>
+  <rect x="404" y="621" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="632" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="612" font-size="10.5" fill="#3A4956">P4M-DenseNet: D4 group-convs + dense connectivity</text>
+  <text x="512" y="628" font-size="10.5" fill="#6A7580">heaviest single weight in the blend</text>
+  <rect x="944" y="607" width="126" height="20" rx="10" fill="#E4F1EF"/>
+  <text x="1007" y="621" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0E8C82">D4-invariant</text>
+  <text x="1148" y="614" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#0E8C82">0.240</text>
+  <rect x="1078" y="624" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="624" width="70" height="8" rx="4" fill="#0E8C82"/>
+
+  <!-- FAMILY D header -->
+  <rect x="350" y="668" width="810" height="1" fill="#6E5AA8"/>
+  <text x="350" y="685" class="eyebrow" font-size="9.5" fill="#4E3D7D">STEERABLE e2cnn (escnn) &#183; &#931; 0.20</text>
+  <text x="1160" y="685" text-anchor="end" font-size="9.5" fill="#93A0A8">a different framework, not a different symmetry &#8212; that is what decorrelated</text>
+
+  <!-- member 7 -->
+  <line x1="336" y1="721" x2="350" y2="721" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="690" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="690" width="5" height="62" rx="2.5" fill="#6E5AA8"/>
+  <circle cx="381" cy="721" r="13" fill="#6E5AA8"/>
+  <text x="381" y="726" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">7</text>
+  <text x="404" y="717" class="mono" font-size="12.5" font-weight="700" fill="#14232F">e2cnn</text>
+  <rect x="404" y="725" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="736" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="716" font-size="10.5" fill="#3A4956">steerable escnn: flipRot2dOnR2(N=4) = D4, regular_repr, GroupPooling head</text>
+  <text x="512" y="732" font-size="10.5" fill="#6A7580">blocks of R2Conv + InnerBN + ReLU + antialiased avgpool, widths 8/16/32/48</text>
+  <rect x="944" y="711" width="126" height="20" rx="10" fill="#EDE9F4"/>
+  <text x="1007" y="725" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4E3D7D">D4-invariant</text>
+  <text x="1148" y="718" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#4E3D7D">0.0667</text>
+  <rect x="1078" y="728" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="728" width="19" height="8" rx="4" fill="#6E5AA8"/>
+  <circle cx="1163" cy="721" r="4" fill="#6E5AA8"/>
+
+  <!-- member 8 -->
+  <line x1="336" y1="791" x2="350" y2="791" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="760" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="760" width="5" height="62" rx="2.5" fill="#6E5AA8"/>
+  <circle cx="381" cy="791" r="13" fill="#6E5AA8"/>
+  <text x="381" y="796" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">8</text>
+  <text x="404" y="787" class="mono" font-size="12.5" font-weight="700" fill="#14232F">e2cnn_s99</text>
+  <rect x="404" y="795" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="806" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="786" font-size="10.5" fill="#3A4956">same recipe, 2nd seed</text>
+  <text x="512" y="802" font-size="10.5" fill="#6A7580">agent-promoted as part of the 3-seed average &#8212; private 0.9587</text>
+  <rect x="944" y="781" width="126" height="20" rx="10" fill="#EDE9F4"/>
+  <text x="1007" y="795" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4E3D7D">D4-invariant</text>
+  <text x="1148" y="788" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#4E3D7D">0.0667</text>
+  <rect x="1078" y="798" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="798" width="19" height="8" rx="4" fill="#6E5AA8"/>
+  <circle cx="1163" cy="791" r="4" fill="#6E5AA8"/>
+
+  <!-- member 9 -->
+  <line x1="336" y1="861" x2="350" y2="861" stroke="#2A4A63" stroke-width="2"/>
+  <rect x="350" y="830" width="810" height="62" rx="10" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="350" y="830" width="5" height="62" rx="2.5" fill="#6E5AA8"/>
+  <circle cx="381" cy="861" r="13" fill="#6E5AA8"/>
+  <text x="381" y="866" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">9</text>
+  <text x="404" y="857" class="mono" font-size="12.5" font-weight="700" fill="#14232F">e2cnn_s21</text>
+  <rect x="404" y="865" width="62" height="15" rx="4" fill="#EEF1F3"/>
+  <text x="435" y="876" text-anchor="middle" class="mono" font-size="8.5" fill="#6A7580">val_loss</text>
+  <text x="512" y="856" font-size="10.5" fill="#3A4956">same recipe, 3rd seed</text>
+  <text x="512" y="872" font-size="10.5" fill="#6A7580">the loop stopped here: its next three candidates were rejected, not fitted</text>
+  <rect x="944" y="851" width="126" height="20" rx="10" fill="#EDE9F4"/>
+  <text x="1007" y="865" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4E3D7D">D4-invariant</text>
+  <text x="1148" y="858" text-anchor="end" class="mono" font-size="13.5" font-weight="700" fill="#4E3D7D">0.0667</text>
+  <rect x="1078" y="868" width="70" height="8" rx="4" fill="#EEF1F3"/>
+  <rect x="1078" y="868" width="19" height="8" rx="4" fill="#6E5AA8"/>
+  <circle cx="1163" cy="861" r="4" fill="#6E5AA8"/>
+
+  <!-- FAN-IN BUS -->
+  <line x1="1160" y1="199" x2="1196" y2="199" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1160" y1="303" x2="1196" y2="303" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="407" x2="1196" y2="407" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="477" x2="1196" y2="477" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="547" x2="1196" y2="547" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1160" y1="617" x2="1196" y2="617" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="721" x2="1196" y2="721" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="791" x2="1196" y2="791" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1172" y1="861" x2="1196" y2="861" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1196" y1="199" x2="1196" y2="861" stroke="#2A4A63" stroke-width="2"/>
+  <line x1="1196" y1="527" x2="1244" y2="527" stroke="#2A4A63" stroke-width="2.4" marker-end="url(#arrInk)"/>
+
+  <!-- SIGMA NODE -->
+  <circle cx="1310" cy="527" r="56" fill="#14232F"/>
+  <text x="1310" y="521" text-anchor="middle" class="mono" font-size="30" font-weight="800" fill="#FFFFFF">&#931;</text>
+  <text x="1310" y="546" text-anchor="middle" class="mono" font-size="14" fill="#9DB2C6">w &#183; p</text>
+  <text x="1310" y="606" text-anchor="middle" font-size="11.5" font-weight="700" fill="#14232F">weighted arithmetic mean</text>
+  <text x="1310" y="622" text-anchor="middle" class="mono" font-size="10" fill="#6A7580">of 9 test probabilities, &#931;w = 1</text>
+
+  <!-- OUTPUT -->
+  <line x1="1310" y1="471" x2="1310" y2="428" stroke="#2A4A63" stroke-width="2.4" marker-end="url(#arrInk)"/>
+  <rect x="1204" y="330" width="212" height="90" rx="12" fill="#FFFFFF" stroke="#0E8C82" stroke-width="2"/>
+  <text x="1224" y="354" class="eyebrow" font-size="9.5" fill="#0E8C82">OUTPUT</text>
+  <text x="1224" y="380" font-size="14" font-weight="700" fill="#14232F">tumour probability</text>
+  <text x="1224" y="399" class="mono" font-size="11" fill="#6A7580">one scalar per patch, 0 to 1</text>
+  <text x="1224" y="413" class="mono" font-size="10" fill="#93A0A8">scored as AUROC</text>
+
+  <line x1="1310" y1="330" x2="1310" y2="312" stroke="#2A4A63" stroke-width="2.4" marker-end="url(#arrInk)"/>
+  <!-- SCORE BADGE -->
+  <rect x="1204" y="188" width="212" height="118" rx="12" fill="#14232F"/>
+  <text x="1224" y="212" class="eyebrow" font-size="9.5" fill="#9DB2C6">SCORE</text>
+  <text x="1224" y="248" class="mono" font-size="26" font-weight="800" fill="#FFFFFF">0.9587</text>
+  <text x="1224" y="266" class="mono" font-size="11" fill="#9DB2C6">private &#183; 0.9660 public</text>
+  <text x="1224" y="288" font-size="10.5" fill="#C6D4DF">rank ~373 of 1149</text>
+  <text x="1224" y="302" font-size="10.5" fill="#C6D4DF">top 32.5% private, ~39% public</text>
+
+  <!-- LEGEND for autonomous marker -->
+  <circle cx="1218" cy="668" r="4" fill="#6E5AA8"/>
+  <text x="1230" y="672" font-size="10" fill="#6A7580">member chosen autonomously by the agent</text>
+  <text x="1230" y="688" font-size="10" fill="#6A7580">(4 of 9; the rest were human-directed)</text>
+
+  <!-- SIDE NOTE -->
+  <rect x="1204" y="712" width="336" height="180" rx="12" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="1224" y="736" class="eyebrow" font-size="9.5" fill="#0E8C82">WHY THIS SHAPE</text>
+  <text x="1224" y="758" font-size="10.5" fill="#3A4956"><tspan x="1224">The blend is deliberately <tspan font-weight="700">unbalanced toward</tspan></tspan><tspan x="1224" dy="14"><tspan font-weight="700">equivariance</tspan> (0.76 of the budget across families</tspan><tspan x="1224" dy="14">3 and 4) because built-in D4 symmetry was the</tspan><tspan x="1224" dy="14">only thing that improved the hidden-set score</tspan><tspan x="1224" dy="14">without improving validation.</tspan></text>
+  <text x="1224" y="842" font-size="10.5" fill="#3A4956"><tspan x="1224">The two non-equivariant members are kept not</tspan><tspan x="1224" dy="14">for strength but for <tspan font-weight="700">disagreement</tspan>: they fail on</tspan><tspan x="1224" dy="14">different patches than the other seven.</tspan></text>
+
+  <!-- FOOTER -->
+  <rect x="0" y="952" width="1600" height="48" fill="#14232F"/>
+  <rect x="0" y="952" width="1600" height="3" fill="#0E8C82"/>
+  <text x="60" y="982" font-size="13" fill="#C6D4DF">Four families by blend budget: pretrained CNN 0.12 &#183; from-scratch CNN 0.12 &#183; p4m group-equivariant 0.56 &#183; steerable e2cnn 0.20.  What an ensemble wants is not a better member but a decorrelated one.</text>
+</svg>
