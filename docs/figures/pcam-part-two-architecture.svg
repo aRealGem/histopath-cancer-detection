@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" font-family="'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <style>
+      text{font-family:'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;}
+      .mono{font-family:ui-monospace,'SF Mono','Cascadia Code',Menlo,Consolas,'Liberation Mono',monospace;}
+      .eyebrow{font-weight:700;letter-spacing:1.6px;}
+    </style>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#12212E" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrInk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#2A4A63"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1000" fill="#F1F3F4"/>
+
+  <!-- HEADER -->
+  <text x="60" y="54" font-size="32" font-weight="800" fill="#14232F">The Breakthrough That Was? &#8212; where five years of progress actually lives</text>
+  <text x="60" y="84" font-size="14.5" fill="#3A4956">Part Two lifts the pre-2020 vow one variable at a time. One modern transformer, then one pathology foundation model, carry the same ensemble from 0.9587 to 0.9761.</text>
+  <text x="60" y="110" class="mono" font-size="10.5" fill="#6A7580">SAME TASK PCam, 96&#215;96 H&amp;E patches, AUROC   &#183;   METHOD change exactly one bolt per experiment so every gain is attributable   &#183;   ARBITER the private leaderboard, always   &#183;   SOURCE essays:histopath-pcam:sequel</text>
+  <rect x="60" y="124" width="1480" height="1" fill="#D8DEE1"/>
+  <rect x="60" y="123" width="104" height="3" rx="1.5" fill="#B23A63"/>
+
+  <!-- PATH RIBBON -->
+  <text x="60" y="158" class="eyebrow" font-size="10" fill="#6A7580">THE PATH, IN FOUR NUMBERS &#8212; PRIVATE AUROC</text>
+  <line x1="150" y1="196" x2="1440" y2="196" stroke="#CBD3D6" stroke-width="1.4" stroke-dasharray="2 5"/>
+
+  <circle cx="150" cy="196" r="6" fill="#0E8C82"/>
+  <text x="150" y="186" text-anchor="middle" class="mono" font-size="15" font-weight="700" fill="#0E8C82">0.9523</text>
+  <text x="150" y="216" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">hand-built</text>
+  <text x="150" y="230" text-anchor="middle" font-size="9.5" fill="#6A7580">where I ran out of ideas</text>
+
+  <circle cx="580" cy="196" r="6" fill="#6E5AA8"/>
+  <text x="580" y="186" text-anchor="middle" class="mono" font-size="15" font-weight="700" fill="#4E3D7D">0.9587</text>
+  <text x="580" y="216" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">autonomous, pre-2020 only</text>
+  <text x="580" y="230" text-anchor="middle" font-size="9.5" fill="#6A7580">what I had called the honest ceiling</text>
+  <text x="365" y="186" text-anchor="middle" class="mono" font-size="10.5" font-weight="700" fill="#6E5AA8">+0.0064</text>
+
+  <circle cx="1010" cy="196" r="6.5" fill="#2F6089"/>
+  <text x="1010" y="186" text-anchor="middle" class="mono" font-size="15" font-weight="700" fill="#1E3D5C">0.9707</text>
+  <text x="1010" y="216" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ one modern transformer</text>
+  <text x="1010" y="230" text-anchor="middle" font-size="9.5" fill="#6A7580">Swin-Tiny, ImageNet-pretrained</text>
+  <text x="795" y="186" text-anchor="middle" class="mono" font-size="11" font-weight="700" fill="#1E3D5C">+0.0120</text>
+
+  <circle cx="1440" cy="196" r="8" fill="#B23A63" stroke="#FFFFFF" stroke-width="2"/>
+  <text x="1440" y="185" text-anchor="middle" class="mono" font-size="16" font-weight="800" fill="#8E2B4C">0.9761</text>
+  <text x="1440" y="216" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ one foundation model</text>
+  <text x="1440" y="230" text-anchor="middle" font-size="9.5" fill="#6A7580">Phikon-v2, frozen, linear probe</text>
+  <text x="1225" y="186" text-anchor="middle" class="mono" font-size="11" font-weight="700" fill="#8E2B4C">+0.0054</text>
+
+  <!-- LEFT CARD: THE REVERSAL -->
+  <rect x="60" y="258" width="770" height="402" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="84" y="288" font-size="17" font-weight="800" fill="#14232F">The reversal: validation ranked them backwards</text>
+  <text x="84" y="308" font-size="11" fill="#5E6B75">Same two models, two different judges. The lines cross, and the crossing is the finding.</text>
+
+  <!-- gridlines -->
+  <line x1="250" y1="330" x2="760" y2="330" stroke="#EFF2F3"/>
+  <line x1="250" y1="404" x2="760" y2="404" stroke="#EFF2F3"/>
+  <line x1="250" y1="479" x2="760" y2="479" stroke="#EFF2F3"/>
+  <line x1="250" y1="553" x2="760" y2="553" stroke="#EFF2F3"/>
+  <text x="240" y="333" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.99</text>
+  <text x="240" y="407" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.98</text>
+  <text x="240" y="482" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.97</text>
+  <text x="240" y="556" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.96</text>
+
+  <!-- axes -->
+  <line x1="280" y1="322" x2="280" y2="588" stroke="#CBD3D6" stroke-width="1.6"/>
+  <line x1="730" y1="322" x2="730" y2="588" stroke="#CBD3D6" stroke-width="1.6"/>
+  <text x="280" y="608" text-anchor="middle" font-size="12" font-weight="700" fill="#3A4956">VALIDATION</text>
+  <text x="280" y="623" text-anchor="middle" font-size="10" fill="#6A7580">held-out slides,</text>
+  <text x="280" y="636" text-anchor="middle" font-size="10" fill="#6A7580">same distribution</text>
+  <text x="730" y="608" text-anchor="middle" font-size="12" font-weight="700" fill="#3A4956">PRIVATE TEST</text>
+  <text x="730" y="623" text-anchor="middle" font-size="10" fill="#6A7580">unseen slides,</text>
+  <text x="730" y="636" text-anchor="middle" font-size="10" fill="#6A7580">other scanners and patients</text>
+
+  <!-- swin line -->
+  <line x1="280" y1="355" x2="730" y2="562" stroke="#2F6089" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="280" cy="355" r="6.5" fill="#2F6089"/>
+  <circle cx="730" cy="562" r="6.5" fill="#2F6089"/>
+  <!-- phikon line -->
+  <line x1="280" y1="378" x2="730" y2="515" stroke="#B23A63" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="280" cy="378" r="6.5" fill="#B23A63"/>
+  <circle cx="730" cy="515" r="7.5" fill="#B23A63"/>
+
+  <!-- crossing marker -->
+  <circle cx="427" cy="423" r="11" fill="none" stroke="#E0912F" stroke-width="3"/>
+  <line x1="427" y1="434" x2="427" y2="470" stroke="#E0912F" stroke-width="1.4" stroke-dasharray="3 3"/>
+  <text x="427" y="486" text-anchor="middle" font-size="11" font-weight="700" fill="#A85E12">the call I got wrong</text>
+  <text x="427" y="500" text-anchor="middle" font-size="10" fill="#A85E12">read the val numbers, wrote off the data axis</text>
+
+  <!-- endpoint labels -->
+  <text x="292" y="349" font-size="11.5" font-weight="700" fill="#1E3D5C">Swin-Tiny</text>
+  <text x="292" y="364" class="mono" font-size="11" fill="#1E3D5C">val 0.9866  &#8212; wins here</text>
+  <text x="292" y="392" font-size="11.5" font-weight="700" fill="#8E2B4C">Phikon-v2</text>
+  <text x="292" y="407" class="mono" font-size="11" fill="#8E2B4C">val 0.9835</text>
+
+  <text x="718" y="556" text-anchor="end" class="mono" font-size="11" fill="#1E3D5C">private 0.9587</text>
+  <text x="718" y="541" text-anchor="end" font-size="11" fill="#1E3D5C">gave back <tspan font-weight="700">0.028</tspan></text>
+  <text x="718" y="509" text-anchor="end" class="mono" font-size="11.5" font-weight="700" fill="#8E2B4C">private 0.9651 &#8212; wins here</text>
+  <text x="718" y="494" text-anchor="end" font-size="11" fill="#8E2B4C">gave back only <tspan font-weight="700">0.018</tspan></text>
+
+  <text x="84" y="642" font-size="11.5" fill="#3A4956">Validation lives inside the training distribution, so it cannot see out-of-distribution</text>
+  <text x="84" y="657" font-size="11.5" fill="#3A4956">behaviour. Only the unseen test set can.</text>
+
+  <!-- RIGHT CARD: THE CHAMPION -->
+  <rect x="856" y="258" width="684" height="402" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="880" y="288" font-size="17" font-weight="800" fill="#14232F">The eleven-member champion</text>
+  <text x="880" y="308" font-size="11" fill="#5E6B75">A weighted average of eleven members&#8217; probabilities, weights summing to 1.</text>
+
+  <!-- stacked bar -->
+  <rect x="880" y="326" width="347" height="42" fill="#0E8C82"/>
+  <rect x="1227" y="326" width="149" height="42" fill="#2F6089"/>
+  <rect x="1376" y="326" width="124" height="42" fill="#B23A63"/>
+  <text x="1053" y="353" text-anchor="middle" class="mono" font-size="14" font-weight="700" fill="#FFFFFF">0.560</text>
+  <text x="1301" y="353" text-anchor="middle" class="mono" font-size="14" font-weight="700" fill="#FFFFFF">0.240</text>
+  <text x="1438" y="353" text-anchor="middle" class="mono" font-size="14" font-weight="700" fill="#FFFFFF">0.200</text>
+
+  <rect x="880" y="386" width="4" height="46" rx="2" fill="#0E8C82"/>
+  <text x="898" y="401" font-size="12.5" font-weight="700" fill="#14232F">Home-grown, Part One</text>
+  <text x="898" y="416" font-size="10.5" fill="#6A7580">MobileNet, from-scratch VGG, 4&#215; p4m equivariant, 3&#215; e2cnn steerable</text>
+  <text x="898" y="429" font-size="10.5" fill="#6A7580">&#8212; the nine-member 0.9587 champion, scaled down to make room</text>
+
+  <rect x="880" y="446" width="4" height="46" rx="2" fill="#2F6089"/>
+  <text x="898" y="461" font-size="12.5" font-weight="700" fill="#14232F">Swin-Tiny</text>
+  <text x="898" y="476" font-size="10.5" fill="#6A7580">ImageNet-pretrained, fine-tuned, 96px resized to 224, D4 test-time aug</text>
+  <text x="898" y="489" font-size="10.5" fill="#6A7580">&#8212; solo private 0.9587: one transformer ties the whole nine-member block</text>
+
+  <rect x="880" y="506" width="4" height="46" rx="2" fill="#B23A63"/>
+  <text x="898" y="521" font-size="12.5" font-weight="700" fill="#14232F">Phikon-v2</text>
+  <text x="898" y="536" font-size="10.5" fill="#6A7580">pathology foundation model, ~460M histology tiles, frozen + linear probe</text>
+  <text x="898" y="549" font-size="10.5" fill="#6A7580">&#8212; solo private 0.9651: the specialist, used in its weakest possible setting</text>
+
+  <!-- score strip -->
+  <rect x="880" y="570" width="636" height="66" rx="10" fill="#14232F"/>
+  <text x="902" y="596" class="mono" font-size="24" font-weight="800" fill="#FFFFFF">0.9761</text>
+  <text x="1006" y="596" class="mono" font-size="12" fill="#9DB2C6">private</text>
+  <text x="902" y="619" class="mono" font-size="12" fill="#9DB2C6">0.9752 public</text>
+  <line x1="1080" y1="582" x2="1080" y2="624" stroke="#33475A"/>
+  <text x="1104" y="592" font-size="11.5" font-weight="700" fill="#FFFFFF">rank 194 of 1149 on the public board</text>
+  <text x="1104" y="609" font-size="11" fill="#C6D4DF">top 16.8%, up from Part One&#8217;s top 39%</text>
+  <text x="1104" y="626" font-size="10" fill="#8FA6B8">the fair like-for-like read, since the private board cannot be ranked</text>
+
+  <!-- BOTTOM: ATTRIBUTION -->
+  <text x="60" y="694" class="eyebrow" font-size="10" fill="#B23A63">WHAT EACH BOLT BOUGHT &#8212; THE WHOLE POINT OF TURNING ONE AT A TIME</text>
+
+  <rect x="60" y="704" width="500" height="150" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="60" y="704" width="5" height="150" rx="2.5" fill="#2F6089"/>
+  <text x="88" y="732" font-size="15" font-weight="800" fill="#14232F">The architecture bought strength</text>
+  <text x="88" y="754" class="mono" font-size="10" fill="#6A7580">HELD FIXED: ImageNet pretraining, same as the 2019 MobileNet</text>
+  <text x="88" y="768" class="mono" font-size="10" fill="#6A7580">CHANGED: the shape of the network</text>
+  <text x="88" y="794" font-size="11.5" fill="#3A4956">One fine-tuned Swin matched two weeks of hand-built</text>
+  <text x="88" y="810" font-size="11.5" fill="#3A4956">symmetry networks, and disagreed with them enough</text>
+  <text x="88" y="826" font-size="11.5" fill="#3A4956">to be worth a 0.30 seat in the blend.</text>
+  <text x="510" y="845" text-anchor="end" class="mono" font-size="19" font-weight="800" fill="#1E3D5C">+0.0120</text>
+
+  <rect x="586" y="704" width="500" height="150" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <rect x="586" y="704" width="5" height="150" rx="2.5" fill="#B23A63"/>
+  <text x="614" y="732" font-size="15" font-weight="800" fill="#14232F">The data bought robustness</text>
+  <text x="614" y="754" class="mono" font-size="10" fill="#6A7580">HELD FIXED: the model itself, frozen &#8212; a single linear layer on top</text>
+  <text x="614" y="768" class="mono" font-size="10" fill="#6A7580">CHANGED: what it had been pretrained on</text>
+  <text x="614" y="794" font-size="11.5" fill="#3A4956">An edge that appeared only on unseen slides, and was</text>
+  <text x="614" y="810" font-size="11.5" fill="#3A4956">invisible &#8212; actively misleading &#8212; on in-distribution</text>
+  <text x="614" y="826" font-size="11.5" fill="#3A4956">validation. Strength and robustness are separate buys.</text>
+  <text x="1036" y="845" text-anchor="end" class="mono" font-size="19" font-weight="800" fill="#8E2B4C">+0.0054</text>
+
+  <!-- CAVEATS -->
+  <rect x="1112" y="704" width="428" height="150" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="1136" y="730" class="eyebrow" font-size="9.5" fill="#A85E12">TWO HONEST CAVEATS</text>
+  <text x="1136" y="754" font-size="11" fill="#3A4956">&#8226;&#160; Tuned by reading the private board, which a real</text>
+  <text x="1136" y="769" font-size="11" fill="#3A4956">&#160;&#160;&#160;competitor cannot do. Blend weights excepted: those</text>
+  <text x="1136" y="784" font-size="11" fill="#3A4956">&#160;&#160;&#160;were fixed from out-of-fold agreement first. So 0.9761</text>
+  <text x="1136" y="799" font-size="11" fill="#3A4956">&#160;&#160;&#160;is a little flattering.</text>
+  <text x="1136" y="820" font-size="11" fill="#3A4956">&#8226;&#160; Phikon got its weakest setup: frozen, one layer, no</text>
+  <text x="1136" y="835" font-size="11" fill="#3A4956">&#160;&#160;&#160;fine-tune. LoRA would likely widen the data-side gap,</text>
+  <text x="1136" y="850" font-size="11" fill="#3A4956">&#160;&#160;&#160;not close it. That run is still open.</text>
+
+  <!-- TAKEAWAY -->
+  <rect x="0" y="928" width="1600" height="72" fill="#14232F"/>
+  <rect x="0" y="928" width="1600" height="3" fill="#B23A63"/>
+  <text x="800" y="962" text-anchor="middle" font-size="20" font-weight="800" fill="#FFFFFF">Almost none of it was invention &#8212; it was buying five years of other people&#8217;s work and being disciplined about how.</text>
+  <text x="800" y="986" text-anchor="middle" font-size="13" fill="#9DB2C6">And the most useful moment was still the one where I got it wrong on validation and the test set corrected me in public.</text>
+</svg>

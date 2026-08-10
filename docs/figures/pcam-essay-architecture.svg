@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1040" width="1600" height="1040" font-family="'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <style>
+      text{font-family:'Segoe UI',Roboto,system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;}
+      .mono{font-family:ui-monospace,'SF Mono','Cascadia Code',Menlo,Consolas,'Liberation Mono',monospace;}
+      .eyebrow{font-weight:700;letter-spacing:1.6px;}
+    </style>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="7" flood-color="#12212E" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrTeal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#0E8C82"/>
+    </marker>
+    <marker id="arrAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#E0912F"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1040" fill="#F1F3F4"/>
+
+  <!-- HEADER -->
+  <text x="60" y="54" font-size="33" font-weight="800" fill="#14232F">The Breakthrough That Wasn&#8217;t &#8212; the campaign as an architecture</text>
+  <text x="60" y="84" font-size="15" fill="#3A4956">PCam / Kaggle Histopathologic Cancer Detection. An honest 0.876 baseline becomes a nine-member ensemble at private 0.9587 &#8212; and the model that failed hardest is what carried it there.</text>
+  <text x="60" y="110" class="mono" font-size="10.5" fill="#6A7580">METRIC AUROC on the private leaderboard   &#183;   DATA 96&#215;96 H&amp;E patches, positive if the centre 32&#215;32 holds tumour; ~220k patches from only 216 whole slides   &#183;   RIG SandboxPi orchestrates, Kaggle T4 trains   &#183;   SOURCE research:histopath_pcam</text>
+  <rect x="60" y="124" width="1480" height="1" fill="#D8DEE1"/>
+  <rect x="60" y="123" width="104" height="3" rx="1.5" fill="#0E8C82"/>
+
+  <!-- ACT BAR -->
+  <rect x="60" y="150" width="340" height="26" rx="4" fill="#1E3D5C"/>
+  <rect x="404" y="150" width="156" height="26" rx="4" fill="#E0912F"/>
+  <rect x="564" y="150" width="460" height="26" rx="4" fill="#0E8C82"/>
+  <rect x="1028" y="150" width="512" height="26" rx="4" fill="#6E5AA8"/>
+  <text x="230" y="168" text-anchor="middle" class="eyebrow" font-size="11" fill="#FFFFFF">I &#183; CORRECTNESS BEFORE CLEVERNESS</text>
+  <text x="482" y="168" text-anchor="middle" class="eyebrow" font-size="11" fill="#FFFFFF">II &#183; THE MIRAGE</text>
+  <text x="794" y="168" text-anchor="middle" class="eyebrow" font-size="11" fill="#FFFFFF">III &#183; DECORRELATION &amp; SYMMETRY</text>
+  <text x="1284" y="168" text-anchor="middle" class="eyebrow" font-size="11" fill="#FFFFFF">IV &#183; AUTONOMY</text>
+
+  <!-- CHART FRAME -->
+  <text x="60" y="204" class="eyebrow" font-size="10" fill="#6A7580">PRIVATE LEADERBOARD AUROC</text>
+  <line x1="110" y1="250" x2="1500" y2="250" stroke="#E6EAEC"/>
+  <line x1="110" y1="291.5" x2="1500" y2="291.5" stroke="#E6EAEC"/>
+  <line x1="110" y1="333.1" x2="1500" y2="333.1" stroke="#E6EAEC"/>
+  <line x1="110" y1="374.6" x2="1500" y2="374.6" stroke="#E6EAEC"/>
+  <line x1="110" y1="416.2" x2="1500" y2="416.2" stroke="#E6EAEC"/>
+  <line x1="110" y1="457.7" x2="1500" y2="457.7" stroke="#E6EAEC"/>
+  <line x1="110" y1="499.2" x2="1500" y2="499.2" stroke="#E6EAEC"/>
+  <text x="100" y="253" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.96</text>
+  <text x="100" y="294" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.94</text>
+  <text x="100" y="336" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.92</text>
+  <text x="100" y="378" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.90</text>
+  <text x="100" y="419" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.88</text>
+  <text x="100" y="461" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.86</text>
+  <text x="100" y="502" text-anchor="end" class="mono" font-size="9.5" fill="#93A0A8">0.84</text>
+  <line x1="110" y1="245" x2="110" y2="520" stroke="#CBD3D6" stroke-width="1.4"/>
+
+  <!-- handoff divider -->
+  <line x1="1026" y1="240" x2="1026" y2="560" stroke="#6E5AA8" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <text x="1036" y="480" class="mono" font-size="9.5" fill="#4E3D7D"><tspan x="1036">handoff to the agent</tspan><tspan x="1036" dy="13">git tag human-baseline-0.9523</tspan></text>
+
+  <!-- SPINE -->
+  <path d="M170,423.8 L330,393.7 L490,342.8 L650,314.8 L810,275.8 L970,266 L1090,261.2 L1200,258.5 L1310,255 L1420,252.7"
+        fill="none" stroke="#2A4A63" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- mirage node and its recycling path -->
+  <path d="M420,515.8 C455,515.8 470,400 488,346" fill="none" stroke="#E0912F" stroke-width="2.4" stroke-dasharray="6 5" marker-end="url(#arrAmber)"/>
+  <circle cx="420" cy="515.8" r="7" fill="#FFFFFF" stroke="#E0912F" stroke-width="3"/>
+  <text x="410" y="519" text-anchor="end" class="mono" font-size="12" font-weight="700" fill="#A85E12">0.8320</text>
+  <text x="410" y="504" text-anchor="end" font-size="10.5" font-weight="700" fill="#A85E12">from-scratch, solo</text>
+  <text x="410" y="534" text-anchor="end" font-size="10" fill="#A85E12">val 0.9593 &#8594; private 0.8320: the mirage</text>
+  <text x="500" y="404" font-size="10" fill="#A85E12"><tspan x="500">recycled: blended 50/50</tspan><tspan x="500" dy="13">with the champion</tspan></text>
+
+  <!-- spine nodes -->
+  <circle cx="170" cy="423.8" r="6.5" fill="#2F6089"/>
+  <circle cx="330" cy="393.7" r="6.5" fill="#2F6089"/>
+  <circle cx="490" cy="342.8" r="8" fill="#E0912F"/>
+  <circle cx="650" cy="314.8" r="6.5" fill="#E0912F"/>
+  <circle cx="810" cy="275.8" r="6.5" fill="#0E8C82"/>
+  <circle cx="970" cy="266" r="6.5" fill="#0E8C82"/>
+  <circle cx="1090" cy="261.2" r="5.5" fill="#6E5AA8"/>
+  <circle cx="1200" cy="258.5" r="5.5" fill="#6E5AA8"/>
+  <circle cx="1310" cy="255" r="5.5" fill="#6E5AA8"/>
+  <circle cx="1420" cy="252.7" r="8.5" fill="#6E5AA8" stroke="#FFFFFF" stroke-width="2"/>
+
+  <!-- node labels, steps 1 to 6 -->
+  <text x="170" y="447" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#1E3D5C">0.8763</text>
+  <text x="170" y="463" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">baseline</text>
+  <text x="170" y="477" text-anchor="middle" font-size="9.5" fill="#6A7580">MobileNetV3-Small, frozen</text>
+
+  <text x="330" y="378" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#0E8C82">0.8908</text>
+  <text x="330" y="364" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ 8-view TTA</text>
+  <text x="330" y="351" text-anchor="middle" font-size="9.5" fill="#6A7580">free: no retraining</text>
+
+  <text x="530" y="330" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#A85E12">0.9153</text>
+  <text x="530" y="316" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ the mirage, blended</text>
+  <text x="530" y="303" text-anchor="middle" font-size="9.5" fill="#6A7580">biggest single gain, larger than TTA</text>
+
+  <text x="650" y="298" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#A85E12">0.9288</text>
+  <text x="650" y="284" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ TinyVGG</text>
+  <text x="650" y="271" text-anchor="middle" font-size="9.5" fill="#6A7580">~250K params: mirages less, diversifies more</text>
+
+  <text x="810" y="259" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#0E8C82">0.9476</text>
+  <text x="810" y="245" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ p4m equivariant nets</text>
+  <text x="810" y="232" text-anchor="middle" font-size="9.5" fill="#6A7580">D4 symmetry built in, not augmented in</text>
+
+  <text x="962" y="288" text-anchor="middle" class="mono" font-size="12.5" font-weight="700" fill="#0E8C82">0.9523</text>
+  <text x="962" y="303" text-anchor="middle" font-size="10.5" font-weight="700" fill="#3A4956">+ P4M-DenseNet</text>
+  <text x="962" y="317" text-anchor="middle" font-size="9.5" fill="#6A7580">human campaign plateaus here</text>
+
+  <!-- autonomous bracket -->
+  <path d="M1080,230 L1080,222 L1424,222 L1424,232" fill="none" stroke="#6E5AA8" stroke-width="1.6"/>
+  <text x="1252" y="213" text-anchor="middle" font-size="11" font-weight="700" fill="#4E3D7D">4 autonomous promotions, 3 honest rejections &#183; +0.0064</text>
+  <text x="1440" y="258" class="mono" font-size="15" font-weight="800" fill="#4E3D7D">0.9587</text>
+  <text x="1440" y="274" font-size="10.5" font-weight="700" fill="#3A4956">final: 9 members</text>
+
+  <!-- DEAD ENDS STRIP -->
+  <text x="110" y="558" class="eyebrow" font-size="10" fill="#A85E12">DEAD ENDS &#8212; NEGATIVE RESULTS THAT SET THE DIRECTION</text>
+  <text x="110" y="578" font-size="11" fill="#5E6B75">&#10007;&#160; Fine-tuning the backbone (top-40 / top-80 / all) &#8212; all three tied the frozen baseline at val ~0.906</text>
+  <text x="110" y="595" font-size="11" fill="#5E6B75">&#10007;&#160; Stain augmentation (HED jitter) &#8212; private 0.8752; our same-stain val simply cannot measure what it targets</text>
+  <text x="820" y="578" font-size="11" fill="#5E6B75">&#10007;&#160; EfficientNetV2-B0 &#8212; val 0.8933; built for 224&#8211;384px, its downsampling throws away 96px signal</text>
+  <text x="820" y="595" font-size="11" fill="#5E6B75">&#8594;&#160; Together they triangulate one truth: on this task, robustness beats capacity</text>
+
+  <!-- PANEL 1: autonomous loop -->
+  <rect x="60" y="618" width="560" height="220" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="84" y="646" font-size="15" font-weight="800" fill="#14232F">Act IV &#8212; the loop, in one supervised day</text>
+  <text x="84" y="665" font-size="10.5" fill="#5E6B75">Gate: a candidate joins only if its test predictions rank-correlate &#8804; 0.90 with <tspan font-style="italic">every</tspan> current member.</text>
+  <text x="84" y="680" font-size="10.5" fill="#5E6B75">The private leaderboard is the sole arbiter of promotion.</text>
+  <rect x="84" y="690" width="512" height="1" fill="#ECEFF0"/>
+  <text x="84" y="709" font-size="11" fill="#4E3D7D"><tspan font-weight="700">+ p4m_reg_vl</tspan> &#8212; 2nd seed of the best member</text>
+  <text x="596" y="709" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#4E3D7D">0.9546</text>
+  <text x="84" y="727" font-size="11" fill="#4E3D7D"><tspan font-weight="700">+ p4m_seed7</tspan> &#8212; 3rd seed</text>
+  <text x="596" y="727" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#4E3D7D">0.9559</text>
+  <text x="84" y="745" font-size="11" fill="#4E3D7D"><tspan font-weight="700">+ e2cnn</tspan> &#8212; a different steerable framework (escnn)</text>
+  <text x="596" y="745" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#4E3D7D">0.9576</text>
+  <text x="84" y="763" font-size="11" fill="#4E3D7D"><tspan font-weight="700">+ e2cnn &#215;3</tspan> &#8212; 3-seed average of that architecture</text>
+  <text x="596" y="763" text-anchor="end" class="mono" font-size="11" font-weight="700" fill="#4E3D7D">0.9587</text>
+  <rect x="84" y="773" width="512" height="1" fill="#ECEFF0"/>
+  <text x="84" y="791" font-size="11" fill="#A85E12">&#10007;&#160; p4m_svm &#8212; below champion</text>
+  <text x="596" y="791" text-anchor="end" class="mono" font-size="11" fill="#A85E12">0.9575</text>
+  <text x="84" y="808" font-size="11" fill="#A85E12">&#10007;&#160; C8 rotation-only group &#8212; failed the decorrelation gate</text>
+  <text x="84" y="825" font-size="11" fill="#A85E12">&#10007;&#160; EffNetV2 from-scratch &#8212; decorrelated fine, too weak solo</text>
+  <text x="596" y="825" text-anchor="end" class="mono" font-size="11" fill="#A85E12">0.9555</text>
+
+  <!-- PANEL 2: same val different world -->
+  <rect x="640" y="618" width="440" height="220" rx="14" fill="#FFFFFF" stroke="#E3E8EA" filter="url(#soft)"/>
+  <text x="664" y="646" font-size="15" font-weight="800" fill="#14232F">The sharpest experiment</text>
+  <text x="664" y="665" font-size="10.5" fill="#5E6B75">Two nets, the <tspan font-weight="700">identical</tspan> validation AUROC of 0.9787. One has D4</text>
+  <text x="664" y="680" font-size="10.5" fill="#5E6B75">symmetry built in; one was left to learn it from augmentation.</text>
+  <text x="664" y="707" font-size="10.5" fill="#5E6B75">p4m group-equivariant</text>
+  <rect x="800" y="694" width="186" height="20" rx="5" fill="#0E8C82"/>
+  <text x="996" y="709" class="mono" font-size="12" font-weight="700" fill="#0E8C82">0.9240</text>
+  <text x="664" y="741" font-size="10.5" fill="#5E6B75">plain from-scratch</text>
+  <rect x="800" y="728" width="57" height="20" rx="5" fill="#E0912F"/>
+  <text x="996" y="743" class="mono" font-size="12" font-weight="700" fill="#A85E12">0.8383</text>
+  <text x="800" y="763" class="mono" font-size="9" fill="#A8B2B9">private AUROC; bars begin at 0.80</text>
+  <rect x="664" y="775" width="392" height="1" fill="#ECEFF0"/>
+  <text x="664" y="794" font-size="11" fill="#3A4956">Same val, <tspan font-weight="700">+0.086 private</tspan>. The mirage was never about small</text>
+  <text x="664" y="809" font-size="11" fill="#3A4956">nets &#8212; it was the missing symmetry.</text>
+  <text x="664" y="828" font-size="10.5" fill="#5E6B75">Corollary adopted: stop on val-<tspan font-style="italic">loss</tspan>, never on val-AUROC.</text>
+
+  <!-- PANEL 3: result and honesties -->
+  <rect x="1100" y="618" width="440" height="220" rx="14" fill="#14232F"/>
+  <text x="1124" y="646" font-size="15" font-weight="800" fill="#FFFFFF">The result, kept square</text>
+  <text x="1124" y="683" class="mono" font-size="27" font-weight="800" fill="#FFFFFF">0.9587</text>
+  <text x="1234" y="683" class="mono" font-size="15" fill="#9DB2C6">private</text>
+  <text x="1124" y="704" class="mono" font-size="13" fill="#9DB2C6">0.9660 public &#183; rank ~373 of 1149 &#183; top 32.5%</text>
+  <rect x="1124" y="716" width="392" height="1" fill="#33475A"/>
+  <text x="1124" y="737" font-size="10.5" fill="#C6D4DF">&#8226;&#160; We tuned by <tspan font-style="italic">reading</tspan> the private board, which real</text>
+  <text x="1124" y="752" font-size="10.5" fill="#C6D4DF">&#160;&#160;&#160;competitors cannot. So 0.9587 is mildly leaderboard-</text>
+  <text x="1124" y="767" font-size="10.5" fill="#C6D4DF">&#160;&#160;&#160;overfit; the fairest read is the public rank, ~top 39%.</text>
+  <text x="1124" y="789" font-size="10.5" fill="#C6D4DF">&#8226;&#160; The teams at a perfect 1.0 used test-set pseudo-labeling</text>
+  <text x="1124" y="804" font-size="10.5" fill="#C6D4DF">&#160;&#160;&#160;and external Camelyon data. We declined both. Upper-third</text>
+  <text x="1124" y="819" font-size="10.5" fill="#C6D4DF">&#160;&#160;&#160;is the honest ceiling for in-competition 2019-era method.</text>
+
+  <!-- DOCTRINE RAIL -->
+  <text x="60" y="874" class="eyebrow" font-size="10" fill="#0E8C82">DOCTRINE ADOPTED &#8212; THE RULES THAT OUTLIVED THE COMPETITION</text>
+
+  <rect x="60" y="884" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="60" y="884" width="4" height="44" rx="2" fill="#1E3D5C"/>
+  <text x="78" y="903" font-size="11.5" font-weight="700" fill="#14232F">Split by slide, not at random</text>
+  <text x="78" y="918" font-size="10" fill="#6A7580">only 216 slides exist; GroupShuffleSplit by whole-slide id</text>
+
+  <rect x="434" y="884" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="434" y="884" width="4" height="44" rx="2" fill="#1E3D5C"/>
+  <text x="452" y="903" font-size="11.5" font-weight="700" fill="#14232F">Normalize exactly once</text>
+  <text x="452" y="918" font-size="10" fill="#6A7580">raw [0,255] in, one identity Rescaling, 13 guardrail tests</text>
+
+  <rect x="808" y="884" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="808" y="884" width="4" height="44" rx="2" fill="#E0912F"/>
+  <text x="826" y="903" font-size="11.5" font-weight="700" fill="#14232F">Leak-free val is not generalization-safe val</text>
+  <text x="826" y="918" font-size="10" fill="#6A7580">grouping stops slide leakage, not distribution overfit</text>
+
+  <rect x="1182" y="884" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="1182" y="884" width="4" height="44" rx="2" fill="#E0912F"/>
+  <text x="1200" y="903" font-size="11.5" font-weight="700" fill="#14232F">Stop on val-loss (BCE), not val-AUROC</text>
+  <text x="1200" y="918" font-size="10" fill="#6A7580">AUROC rewards confident-and-wrong; BCE punishes it</text>
+
+  <rect x="60" y="936" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="60" y="936" width="4" height="44" rx="2" fill="#0E8C82"/>
+  <text x="78" y="955" font-size="11.5" font-weight="700" fill="#14232F">Judge a candidate by decorrelation</text>
+  <text x="78" y="970" font-size="10" fill="#6A7580">rank-correlation &#8804; 0.90 with every member, not solo score</text>
+
+  <rect x="434" y="936" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="434" y="936" width="4" height="44" rx="2" fill="#0E8C82"/>
+  <text x="452" y="955" font-size="11.5" font-weight="700" fill="#14232F">Decorrelation is necessary, not sufficient</text>
+  <text x="452" y="970" font-size="10" fill="#6A7580">a member also needs standalone strength, or it drags</text>
+
+  <rect x="808" y="936" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="808" y="936" width="4" height="44" rx="2" fill="#6E5AA8"/>
+  <text x="826" y="955" font-size="11.5" font-weight="700" fill="#14232F">Diversity of method beats diversity of seed</text>
+  <text x="826" y="970" font-size="10" fill="#6A7580">once seeds plateau, each additional one adds only noise</text>
+
+  <rect x="1182" y="936" width="358" height="44" rx="8" fill="#FFFFFF" stroke="#E3E8EA"/>
+  <rect x="1182" y="936" width="4" height="44" rx="2" fill="#6E5AA8"/>
+  <text x="1200" y="955" font-size="11.5" font-weight="700" fill="#14232F">The framework set the diversity ceiling</text>
+  <text x="1200" y="970" font-size="10" fill="#6A7580">D4 vs rotation-only C8 inside escnn barely decorrelated</text>
+
+  <!-- FOOTER -->
+  <rect x="0" y="996" width="1600" height="44" fill="#14232F"/>
+  <rect x="0" y="996" width="1600" height="3" fill="#0E8C82"/>
+  <text x="800" y="1025" text-anchor="middle" font-size="16.5" font-weight="700" fill="#FFFFFF">The most useful entries were still the ones where we were wrong &#8212; and the loop&#8217;s best trait was knowing when it was.</text>
+</svg>
