@@ -1,5 +1,10 @@
 # Histopathologic Cancer Detection — MobileNetV3 transfer baseline
 
+<p align="center">
+  <img src="assets/branding/logo.svg" alt="Histopath logo" width="480">
+</p>
+
+
 On-ramp entry (kanban **R09.1**). Goal: reproducible notebook + leaderboard
 screenshot + one-paragraph method note. Metric: **AUROC**. The competition is in
 **Late Submission** mode — it's a Knowledge/Playground comp, so it awards *no
@@ -123,3 +128,4 @@ pip install -r requirements.txt
 - Metric, format, late-submission status: Kaggle competition page (verified 2026-07-06).
 - Dataset: modified PatchCamelyon (PCam), CC0 per Kaggle rules; label = ≥1 tumor
   pixel in the center 32×32 region of each 96×96 patch.
+
